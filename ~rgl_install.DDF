@@ -1,0 +1,35 @@
+;Auto-generated Diamond Directive File. Can be deleted without harm.
+.Set CabinetNameTemplate=C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\~rgl_install.CAB
+.Set CompressionType=LZX
+.Set CompressionLevel=7
+.Set InfFileName=C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\~rgl_install_LAYOUT.INF
+.Set RptFileName=C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\~rgl_install.RPT
+.Set MaxDiskSize=CDROM
+.Set ReservePerCabinetSize=0
+.Set InfCabinetLineFormat=*cab#*=Application Source Media,*cabfile*,0
+.Set Compress=on
+.Set CompressionMemory=21
+.Set DiskDirectoryTemplate=
+.Set Cabinet=ON
+.Set MaxCabinetSize=999999999
+.Set InfDiskHeader=
+.Set InfDiskLineFormat=
+.Set InfCabinetHeader=[SourceDisksNames]
+.Set InfFileHeader=
+.Set InfFileHeader1=[SourceDisksFiles]
+.Set InfFileLineFormat=*file*=*cab#*,,*size*,*csum*
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\__init__.py"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\arial10x10.png"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\classes.py"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\classes.pyc"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\globfun.py"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\globfun.pyc"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\globs.py"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\globs.pyc"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\libtcod.dll"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\libtcod-gui.dll"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\main.py"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\main.pyc"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\PLAY.bat"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\README.md"
+"C:\Users\WOOP17-COL\Desktop\Dev\rgl_main\SDL2.dll"
