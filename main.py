@@ -5,34 +5,25 @@
 #Version: Prototype
 ###########################################################
 
-#Algorithm improvements - cellular automata for organic shapes
-#Check on roguebasin
-#Isolated caves- flood fill and label and then connect them
-#Run checker to make sure it is finishable
-
-#What to get in first playable
-#Equipment & inventory, rest of UI
-#Staircases to other levels
-#Staircases - keep list of seeds for levels - regenerate with seed, keep data on monsters they've killed, objects there, etc.
-#Make game loop - create character and enter game and die and restart
-#Write random number generator?
-
 import libtcodpy as libtcod
 import classes
 import globs
 import globfun
 
 #Constants
-#Window size
+#Window size & GUI
 SCREEN_WIDTH = classes.SCREEN_WIDTH
 SCREEN_HEIGHT = classes.SCREEN_HEIGHT
+PANEL_HEIGHT = 7
+BAR_WIDTH = 20
+PANEL_Y = SCREEN_HEIGHT - PANEL_HEIGHT
 
-#FOV constants
+#FOV 
 FOV_ALGO = 0    #FOV algorithm to use
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
-#Population constants
+#Population
 MAX_ROOM_MONSTERS = 3
 
 ###########################################################
@@ -263,9 +254,35 @@ def renderAll():
 	#Push contents of con to root console
 	libtcod.console_blit(classes.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)  
 
+
 	#Draw GUI elements
-	libtcod.console_set_default_foreground(classes.con, libtcod.white)
-	libtcod.console_print_ex(classes.con, 1, SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.LEFT, 'HP: ' + str(globs.player.fighter.hp) + '/' + str(globs.player.fighter.maxHP))
+	#Prepare for GUI elements
+	libtcod.console_set_default_background(panel, libtcod.black)
+	libtcod.console_clear(panel)
+
+	#Show player stats
+	renderBar(1, 1, BAR_WIDTH, 'HP', globs.player.fighter.hp, globs.player.fighter.maxHP, libtcod.light_red, libtcod.darker_red)
+
+	#Blit contents of panel to root
+	libtcod.console_blit(panel, 0, 0, SCREEN_WIDTH, PANEL_HEIGHT, 0, 0, PANEL_Y)
+
+#Render GUI status bars
+def renderBar(x, y, totalWidth, name, value, max, barColor, backColor):
+	#Calculate width of the bar
+	barWidth = int(float(value) / max * totalWidth)
+
+	#Render background
+	libtcod.console_set_default_background(panel, backColor)
+	libtcod.console_rect(panel, x, y, totalWidth, 1, False, libtcod.BKGND_SCREEN)
+
+	#Render bar on top of background
+	libtcod.console_set_default_background(panel, barColor)
+	if barWidth > 0:
+		libtcod.console_rect(panel, x, y, barWidth, 1, False, libtcod.BKGND_SCREEN)
+
+	#Render text with values on bar
+	libtcod.console_set_default_foreground(panel, libtcod.white)
+	libtcod.console_print_ex(panel, x + totalWidth / 2, y, libtcod.BKGND_NONE, libtcod.CENTER, name + ": " + str(value) + "/" + str(max))
 ###########################################################
 #Main game loop & Initialization
 ###########################################################
@@ -281,6 +298,9 @@ libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | 
 
 #Initialize window
 libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'mrgl', False)
+
+#Initialize GUI panel
+panel = libtcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
 
 #Generate map
 makeMap()

@@ -14,7 +14,7 @@ SCREEN_HEIGHT = 50
 
 #Size of map
 MAP_WIDTH = 80
-MAP_HEIGHT = 45
+MAP_HEIGHT = 43
 
 #Room sizes/limits
 ROOM_MAX_SIZE = 10
