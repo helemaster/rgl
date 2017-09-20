@@ -9,9 +9,6 @@ import globfun
 import math
 
 #Constants
-SCREEN_WIDTH = 80
-SCREEN_HEIGHT = 50
-
 #Size of map
 MAP_WIDTH = 80
 MAP_HEIGHT = 43
@@ -30,7 +27,7 @@ COLOR_LIGHT_GROUND = libtcod.Color(200, 180, 50)
 
 #Variables
 #Create main off-screen console
-con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
+con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 
 
 ###########################################################
@@ -168,25 +165,26 @@ class Fighter:
 		self.deathFunction = deathFunction
 
 	def takeDamage(self, damage):
+		#Apply damage, if possible
+		if damage > 0:
+			self.hp -= damage
+
 		#Check if object is dead
 		if self.hp <= 0:
 			function = self.deathFunction
 			if function is not None:
 				function(self.owner)
 
-		#Apply damage, if possible
-		if damage > 0:
-			self.hp -= damage
-
+		
 	def attack(self, target):
 		#Simple formula for attack damage
 		damage = self.power - target.fighter.defense
 
 		if damage > 0:
-			print(self.owner.name.capitalize() + " attacks " + target.name + " for " + str(damage) + " hit points.")
+			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " for " + str(damage) + " hit points.", libtcod.white)
 			target.fighter.takeDamage(damage)
 		else:
-			print(self.owner.name.capitalize() + " attacks " + target.name + " but it has no effect!")
+			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " but it has no effect!", libtcod.white)
 
 ###########################################################
 #BasicMonster - basic monster AI

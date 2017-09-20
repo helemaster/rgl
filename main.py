@@ -2,21 +2,13 @@
 #main.py
 #Base module to run game
 #Holly LeMaster, 2017
-#Version: Prototype
+#Version: Vertical Slice
 ###########################################################
 
 import libtcodpy as libtcod
 import classes
 import globs
 import globfun
-
-#Constants
-#Window size & GUI
-SCREEN_WIDTH = classes.SCREEN_WIDTH
-SCREEN_HEIGHT = classes.SCREEN_HEIGHT
-PANEL_HEIGHT = 7
-BAR_WIDTH = 20
-PANEL_Y = SCREEN_HEIGHT - PANEL_HEIGHT
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -175,11 +167,11 @@ def placeObjects(room):
 			choice = libtcod.random_get_int(0, 0, 100)
 			if choice < 20:
 				#Create evil tree w/ fighter component, monster ai, & object
-				fighterComponent = classes.Fighter(hp = 10, defense = 4, power = 1, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 10, defense = 4, power = 2, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 't', 'evil tree', libtcod.green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
 			elif choice < 20+40:
-				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 1, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 2, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'r', 'rat', libtcod.light_pink, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
 			elif choice < 20+40+10:
@@ -198,7 +190,7 @@ def placeObjects(room):
 #Kill player, change character to corpse, change game state
 def playerDeath(player):
 	#End game
-	print("You died!")
+	globfun.message("You have died!", libtcod.red)
 	globs.gameState = "dead"
 
 	#Change player character to corpse
@@ -207,7 +199,7 @@ def playerDeath(player):
 
 #Kill monster, change character, modify attributes
 def monsterDeath(monster):
-	print(monster.name.capitalize() + " is dead!")
+	globfun.message(monster.name.capitalize() + " is dead!", libtcod.orange)
 	monster.color = libtcod.dark_red
 	monster.blocks = False
 	monster.fighter = None
@@ -252,19 +244,26 @@ def renderAll():
 	globs.player.draw()
 
 	#Push contents of con to root console
-	libtcod.console_blit(classes.con, 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, 0, 0, 0)  
+	libtcod.console_blit(classes.con, 0, 0, globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 0, 0, 0)  
 
 
 	#Draw GUI elements
 	#Prepare for GUI elements
-	libtcod.console_set_default_background(panel, libtcod.black)
-	libtcod.console_clear(panel)
+	libtcod.console_set_default_background(globs.panel, libtcod.black)
+	libtcod.console_clear(globs.panel)
+
+	#Print messages one line at a time
+	y = 1
+	for (line, color) in globs.gameMsgs:
+		libtcod.console_set_default_foreground(globs.panel, color)
+		libtcod.console_print_ex(globs.panel, globs.MSG_X, y, libtcod.BKGND_NONE, libtcod.LEFT, line)
+		y += 1
 
 	#Show player stats
-	renderBar(1, 1, BAR_WIDTH, 'HP', globs.player.fighter.hp, globs.player.fighter.maxHP, libtcod.light_red, libtcod.darker_red)
+	renderBar(1, 1, globs.BAR_WIDTH, 'HP', globs.player.fighter.hp, globs.player.fighter.maxHP, libtcod.light_red, libtcod.darker_red)
 
 	#Blit contents of panel to root
-	libtcod.console_blit(panel, 0, 0, SCREEN_WIDTH, PANEL_HEIGHT, 0, 0, PANEL_Y)
+	libtcod.console_blit(globs.panel, 0, 0, globs.SCREEN_WIDTH, globs.PANEL_HEIGHT, 0, 0, globs.PANEL_Y)
 
 #Render GUI status bars
 def renderBar(x, y, totalWidth, name, value, max, barColor, backColor):
@@ -272,17 +271,20 @@ def renderBar(x, y, totalWidth, name, value, max, barColor, backColor):
 	barWidth = int(float(value) / max * totalWidth)
 
 	#Render background
-	libtcod.console_set_default_background(panel, backColor)
-	libtcod.console_rect(panel, x, y, totalWidth, 1, False, libtcod.BKGND_SCREEN)
+	libtcod.console_set_default_background(globs.panel, backColor)
+	libtcod.console_rect(globs.panel, x, y, totalWidth, 1, False, libtcod.BKGND_SCREEN)
 
 	#Render bar on top of background
-	libtcod.console_set_default_background(panel, barColor)
+	libtcod.console_set_default_background(globs.panel, barColor)
 	if barWidth > 0:
-		libtcod.console_rect(panel, x, y, barWidth, 1, False, libtcod.BKGND_SCREEN)
+		libtcod.console_rect(globs.panel, x, y, barWidth, 1, False, libtcod.BKGND_SCREEN)
 
 	#Render text with values on bar
-	libtcod.console_set_default_foreground(panel, libtcod.white)
-	libtcod.console_print_ex(panel, x + totalWidth / 2, y, libtcod.BKGND_NONE, libtcod.CENTER, name + ": " + str(value) + "/" + str(max))
+	libtcod.console_set_default_foreground(globs.panel, libtcod.white)
+	libtcod.console_print_ex(globs.panel, x + totalWidth / 2, y, libtcod.BKGND_NONE, libtcod.CENTER, name + ": " + str(value) + "/" + str(max))
+
+
+
 ###########################################################
 #Main game loop & Initialization
 ###########################################################
@@ -297,10 +299,7 @@ globs.objects = [globs.player]  #list holding all active objects
 libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 
 #Initialize window
-libtcod.console_init_root(SCREEN_WIDTH, SCREEN_HEIGHT, 'mrgl', False)
-
-#Initialize GUI panel
-panel = libtcod.console_new(SCREEN_WIDTH, PANEL_HEIGHT)
+libtcod.console_init_root(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 'mrgl', False)
 
 #Generate map
 makeMap()
@@ -317,6 +316,12 @@ fovRecompute = True
 #Set state to playing
 globs.gameState = 'playing'
 
+#Initialize GUI panel
+globs.panel = libtcod.console_new(globs.SCREEN_WIDTH, globs.PANEL_HEIGHT)
+
+#Print welcoming message
+globfun.message("Welcome, stranger! Prepare to perish!", libtcod.lighter_green)
+
 
 #Main loop
 while not libtcod.console_is_window_closed():
@@ -326,6 +331,13 @@ while not libtcod.console_is_window_closed():
 	
 	libtcod.console_flush() #Present changes to console
 	
+	#Debug printing of game messages
+	#for msg in globs.gameMsgs:
+		#print msg
+
+	#Debug printing of player's health/max health
+	print(globs.player.fighter.hp)
+	print(globs.player.fighter.maxHP)
 
 	#Clear objects
 	for object in globs.objects:
@@ -344,4 +356,4 @@ while not libtcod.console_is_window_closed():
 				object.ai.takeTurn()
 
 	if globs.gameState == 'dead':
-		print("PLAYER IS DEAD")
+		globfun.message("You have died!", libtcod.red)
