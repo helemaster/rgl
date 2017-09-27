@@ -24,6 +24,9 @@ COLOR_DARK_GROUND = libtcod.Color(50, 50, 150)
 COLOR_LIGHT_WALL = libtcod.Color(50, 50, 150)
 COLOR_LIGHT_GROUND = libtcod.Color(200, 180, 50)
 
+#Inventory capacity
+INVENTORY_SIZE = 26
+
 
 #Variables
 #Create main off-screen console
@@ -40,7 +43,7 @@ con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 #Object - generic object, always represented by character
 ###########################################################
 class Object:
-	def __init__(self, x, y, char, name, color, blocks = False, fighter = None, ai = None):
+	def __init__(self, x, y, char, name, color, blocks = False, fighter = None, ai = None, item = None):
 		self.x = x
 		self.y = y
 		self.char = char
@@ -56,6 +59,10 @@ class Object:
 		self.ai = ai
 		if self.ai:
 			self.ai.owner = self
+
+		self.item = item
+		if self.item:
+			self.item.owner = self
 
 
 	#Functions
@@ -201,3 +208,19 @@ class BasicMonster:
 			#Attack if close enough (if player is alive)
 			elif globs.player.fighter.hp > 0:
 				monster.fighter.attack(globs.player)
+
+###########################################################
+#Item - can be picked up & used
+###########################################################
+class Item:
+	#Add to player's inventory and remove from map
+	def pickUp(self):
+		print("grab function")
+		if len(globs.inventory) >= INVENTORY_SIZE:
+			print("inv full")
+			globfun.message("Your can't fit anything else into your bag.", libtcod.red)
+		else:
+			print("adding")
+			globs.inventory.append(self.owner)
+			globs.objects.remove(self.owner)
+			globfun.message("Aquired a " + self.owner.name + ".", libtcod.green)

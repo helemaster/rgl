@@ -20,6 +20,7 @@ TORCH_RADIUS = 10
 
 #Population
 MAX_ROOM_MONSTERS = 3
+MAX_ROOM_ITEMS = 2
 
 ###########################################################
 #Functions
@@ -42,18 +43,28 @@ def handle_keys():
 		#Movement
 		if key.vk == libtcod.KEY_UP:
 			playerMoveOrAttack(0, -1)
-			return "moved"
 		elif key.vk == libtcod.KEY_DOWN:
 			playerMoveOrAttack(0, 1)
-			return "moved"
 		elif key.vk == libtcod.KEY_LEFT:
 			playerMoveOrAttack(-1, 0)
-			return "moved"
 		elif key.vk == libtcod.KEY_RIGHT:
 			playerMoveOrAttack(1, 0)
-			return "moved"
-	else:
-		return 'no-turn'
+		
+		else:
+			#Check for other keys
+			keyChar = chr(key.c)
+
+			print("handle else")
+
+			if keyChar == 'g':  #Pick up item
+				print("pressed g")
+				#Look for item in player's tile
+				for object in globs.objects: 
+					if object.x == globs.player.x and object.y == globs.player.y and object.item:
+						object.item.pickUp()
+						break
+
+			return 'no-turn'
 
 #Return string with name of objects under mouse
 def getNamesUnderMouse():
@@ -179,8 +190,8 @@ def placeObjects(room):
 
 	for i in range(numMonsters):
 		#Choose random position for monster
-		x = libtcod.random_get_int(0, room.x1, room.x2)
-		y = libtcod.random_get_int(0, room.y1, room.y2)
+		x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+		y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
 
 		#Only place if tile isn't blocked
 		if not globfun.isBlocked(x, y):
@@ -206,6 +217,24 @@ def placeObjects(room):
 
 			#Add monster to object list
 			globs.objects.append(monster)
+
+	#Populate items - choose random number of items
+	numItems = libtcod.random_get_int(0, 0, MAX_ROOM_ITEMS)
+
+	for i in range(numItems):
+		#Pick random spot for item
+		x = libtcod.random_get_int(0, room.x1 + 1, room.x2 - 1)
+		y = libtcod.random_get_int(0, room.y1 + 1, room.y2 - 1)
+
+		#Only place if tile isn't blocked
+		if not globfun.isBlocked(x, y):
+			#Create HP potion
+			itemComponent = classes.Item()
+			item = classes.Object(x, y, "!", "healing potion", libtcod.light_red, item = itemComponent)
+
+			globs.objects.append(item)
+			item.sendToBack()
+
 
 #Death handling
 #Kill player, change character to corpse, change game state
@@ -378,7 +407,7 @@ while not libtcod.console_is_window_closed():
 	
 
 	#Let AIs take turn
-	if globs.gameState == 'playing' and (globs.playerAction != 'no-turn' and globs.playerAction != None):
+	if globs.gameState == 'playing' and globs.playerAction != 'no-turn':
 		for object in globs.objects:
 			if object.ai:
 				object.ai.takeTurn()

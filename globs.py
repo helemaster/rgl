@@ -23,5 +23,6 @@ objects = []   #List to store all objects in game
 player = ""  #Object that holds player
 panel = []  #GUI panel
 gameMsgs = []  #List of game messages - message and its color
+inventory = []  #Player inventory
 
 
