@@ -10,6 +10,9 @@ import classes
 import globs
 import globfun
 
+#Constants
+LIMIT_FPS = 20
+
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
 FOV_LIGHT_WALLS = True
@@ -24,10 +27,7 @@ MAX_ROOM_MONSTERS = 3
 
 #Input functions
 def handle_keys():
-	global fovRecompute
-
-	#Scan for keypresses - time does not move unless key pressed
-	key = libtcod.console_wait_for_keypress(True)
+	global key
 
 	#Fullscreen toggle
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -40,16 +40,37 @@ def handle_keys():
 	#Player can only move if game state is "playing"
 	if globs.gameState == 'playing':
 		#Movement
-		if libtcod.console_is_key_pressed(libtcod.KEY_UP):
+		if key.vk == libtcod.KEY_UP:
 			playerMoveOrAttack(0, -1)
-		elif libtcod.console_is_key_pressed(libtcod.KEY_DOWN):
+			return "moved"
+		elif key.vk == libtcod.KEY_DOWN:
 			playerMoveOrAttack(0, 1)
-		elif libtcod.console_is_key_pressed(libtcod.KEY_LEFT):
+			return "moved"
+		elif key.vk == libtcod.KEY_LEFT:
 			playerMoveOrAttack(-1, 0)
-		elif libtcod.console_is_key_pressed(libtcod.KEY_RIGHT):
+			return "moved"
+		elif key.vk == libtcod.KEY_RIGHT:
 			playerMoveOrAttack(1, 0)
+			return "moved"
 	else:
 		return 'no-turn'
+
+#Return string with name of objects under mouse
+def getNamesUnderMouse():
+	global mouse
+
+	(x, y) = (mouse.cx, mouse.cy)
+
+	#Create list with names of objects at mouse coords and in FOV
+	names = []
+	for obj in globs.objects:
+		if obj.x == x and obj.y == y and libtcod.map_is_in_fov(globs.fovMap, obj.x, obj.y):
+			names.append(obj.name)
+
+	#Join names into single string, separated by commas
+	names = ', '.join(names)
+
+	return names.capitalize()
 
 def playerMoveOrAttack(dx, dy):
 	global fovRecompute
@@ -262,6 +283,10 @@ def renderAll():
 	#Show player stats
 	renderBar(1, 1, globs.BAR_WIDTH, 'HP', globs.player.fighter.hp, globs.player.fighter.maxHP, libtcod.light_red, libtcod.darker_red)
 
+	#Display names of objects under mouse
+	libtcod.console_set_default_foreground(globs.panel, libtcod.light_gray)
+	libtcod.console_print_ex(globs.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, getNamesUnderMouse())
+
 	#Blit contents of panel to root
 	libtcod.console_blit(globs.panel, 0, 0, globs.SCREEN_WIDTH, globs.PANEL_HEIGHT, 0, 0, globs.PANEL_Y)
 
@@ -322,22 +347,23 @@ globs.panel = libtcod.console_new(globs.SCREEN_WIDTH, globs.PANEL_HEIGHT)
 #Print welcoming message
 globfun.message("Welcome, stranger! Prepare to perish!", libtcod.lighter_green)
 
+#Mouse and key input handling
+mouse = libtcod.Mouse()
+key = libtcod.Key()
+
+#Limit FPS
+libtcod.sys_set_fps(LIMIT_FPS)
 
 #Main loop
 while not libtcod.console_is_window_closed():
+
+	#Check for key presses
+	libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, key, mouse)
 
 	#Render objects & map
 	renderAll()
 	
 	libtcod.console_flush() #Present changes to console
-	
-	#Debug printing of game messages
-	#for msg in globs.gameMsgs:
-		#print msg
-
-	#Debug printing of player's health/max health
-	print(globs.player.fighter.hp)
-	print(globs.player.fighter.maxHP)
 
 	#Clear objects
 	for object in globs.objects:
@@ -346,14 +372,13 @@ while not libtcod.console_is_window_closed():
 
 	#Key handling
 	globs.playerAction = handle_keys()
+	
 	if globs.playerAction == 'exit':
 		break
+	
 
 	#Let AIs take turn
-	if globs.gameState == 'playing' and globs.playerAction != 'no-turn':
+	if globs.gameState == 'playing' and (globs.playerAction != 'no-turn' and globs.playerAction != None):
 		for object in globs.objects:
 			if object.ai:
 				object.ai.takeTurn()
-
-	if globs.gameState == 'dead':
-		globfun.message("You have died!", libtcod.red)
