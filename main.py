@@ -54,10 +54,7 @@ def handle_keys():
 			#Check for other keys
 			keyChar = chr(key.c)
 
-			print("handle else")
-
 			if keyChar == 'g':  #Pick up item
-				print("pressed g")
 				#Look for item in player's tile
 				for object in globs.objects: 
 					if object.x == globs.player.x and object.y == globs.player.y and object.item:
@@ -337,7 +334,25 @@ def renderBar(x, y, totalWidth, name, value, max, barColor, backColor):
 	libtcod.console_set_default_foreground(globs.panel, libtcod.white)
 	libtcod.console_print_ex(globs.panel, x + totalWidth / 2, y, libtcod.BKGND_NONE, libtcod.CENTER, name + ": " + str(value) + "/" + str(max))
 
+#Menu functions
+#Generic menu function
+def menu(header, options, width):
+	#Make sure there aren't too many menu items
+	if len(options) > 26:
+		raise ValueError("Cannot have a menu with more than 26 options.")
 
+	#Calculate total height for header and one line per option
+	headerHeight = libtcod.console_get_height_rect(classes.con, 0, 0, width, SCREEN_HEIGHT, header)
+	height = len(options) + headerHeight
+
+	#Create console for menu window]
+	window = libtcod.console_new(width, height)
+
+	#Print header with auto-wrap
+	libtcod.console_set_default_foreground(window, libtcod.white)
+	libtcod.console_print_rect_ex(window, 0, 0 width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
+
+	
 
 ###########################################################
 #Main game loop & Initialization

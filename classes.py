@@ -27,7 +27,6 @@ COLOR_LIGHT_GROUND = libtcod.Color(200, 180, 50)
 #Inventory capacity
 INVENTORY_SIZE = 26
 
-
 #Variables
 #Create main off-screen console
 con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
@@ -215,12 +214,9 @@ class BasicMonster:
 class Item:
 	#Add to player's inventory and remove from map
 	def pickUp(self):
-		print("grab function")
 		if len(globs.inventory) >= INVENTORY_SIZE:
-			print("inv full")
 			globfun.message("Your can't fit anything else into your bag.", libtcod.red)
 		else:
-			print("adding")
 			globs.inventory.append(self.owner)
 			globs.objects.remove(self.owner)
 			globfun.message("Aquired a " + self.owner.name + ".", libtcod.green)
