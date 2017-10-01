@@ -12,6 +12,7 @@ import globfun
 
 #Constants
 LIMIT_FPS = 20
+INVENTORY_WIDTH = 50
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -54,12 +55,18 @@ def handle_keys():
 			#Check for other keys
 			keyChar = chr(key.c)
 
-			if keyChar == 'g':  #Pick up item
+			#Pick up item
+			if keyChar == 'g':  
 				#Look for item in player's tile
 				for object in globs.objects: 
 					if object.x == globs.player.x and object.y == globs.player.y and object.item:
 						object.item.pickUp()
 						break
+
+			#Show inventory
+			if keyChar == 'i':
+				inventoryMenu("Press the key next to an item to use it, or any other to cancel.\n")
+
 
 			return 'no-turn'
 
@@ -342,7 +349,7 @@ def menu(header, options, width):
 		raise ValueError("Cannot have a menu with more than 26 options.")
 
 	#Calculate total height for header and one line per option
-	headerHeight = libtcod.console_get_height_rect(classes.con, 0, 0, width, SCREEN_HEIGHT, header)
+	headerHeight = libtcod.console_get_height_rect(classes.con, 0, 0, width, globs.SCREEN_HEIGHT, header)
 	height = len(options) + headerHeight
 
 	#Create console for menu window]
@@ -350,9 +357,35 @@ def menu(header, options, width):
 
 	#Print header with auto-wrap
 	libtcod.console_set_default_foreground(window, libtcod.white)
-	libtcod.console_print_rect_ex(window, 0, 0 width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
+	libtcod.console_print_rect_ex(window, 0, 0, width, height, libtcod.BKGND_NONE, libtcod.LEFT, header)
 
-	
+	#Print menu options, incrementing the ASCII code of each option's letter
+	y = headerHeight
+	letterIndex = ord('a')   #Ord returns ASCII code of letter
+	for optionText in options:
+		text = '(' + chr(letterIndex) + ')' + optionText
+		libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+		y += 1
+		letterIndex += 1
+
+	#Blit contents of window to root console
+	x = globs.SCREEN_WIDTH / 2 - width / 2
+	y = globs.SCREEN_HEIGHT / 2 - height / 2
+	libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
+
+	#Present root to player and wait for keypress
+	libtcod.console_flush()
+	key = libtcod.console_wait_for_keypress(True)
+
+#Inventory menu - show menu w/ each item in inventory as an option
+def inventoryMenu(header):
+	if len(globs.inventory) == 0:
+		options = ["Inventory is empty."]
+	else:
+		options = [item.name for item in globs.inventory]  #Populate with inventory items
+
+	index = menu(header, options, INVENTORY_WIDTH)
+
 
 ###########################################################
 #Main game loop & Initialization
