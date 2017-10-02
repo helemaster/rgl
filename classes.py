@@ -106,6 +106,10 @@ class Object:
 
 		return math.sqrt(dx ** 2 + dy ** 2)
 
+	#Get distance from object to a tile
+	def distance(self, x, y):
+		return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
+
 	#Make this object drawn first (on bottom)
 	def sendToBack(self):
 		globs.objects.remove(self)

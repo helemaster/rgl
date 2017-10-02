@@ -19,6 +19,8 @@ HEAL_AMOUNT = 10
 LIGHTNING_DAMAGE = 20
 LIGHTNING_RANGE = 5
 CONFUSE_RANGE = 8
+FIREBALL_RADIUS = 3
+FIREBALL_DAMAGE = 12
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -98,6 +100,26 @@ def getNamesUnderMouse():
 	names = ', '.join(names)
 
 	return names.capitalize()
+
+#Mouse targeting - return position of tile left-clicked in player FOV
+def targetTile(maxRange = None):
+	global key, mouse
+
+	while True:
+		#Render screen to erase inventory and show names of objects under mouse
+		libtcod.console_flush()
+		libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, key, mouse)
+		renderAll()
+
+		(x, y) = (mouse.cx, mouse.cy)
+
+		#Accept target if it is in FOV and maximum range
+		if mouse.lbutton_pressed and libtcod.map_is_in_fov(globs.fovMap, x, y) and (maxRange is None or globs.player.distance(x, y) <= maxRange):
+			return (x, y)
+
+		#Allow cancelling
+		if mouse.rbutton_pressed or key.vk == libtcod.KEY_ESCAPE:
+			return (None, None)
 
 def playerMoveOrAttack(dx, dy):
 	global fovRecompute
@@ -249,10 +271,14 @@ def placeObjects(room):
 				#Create healing potion
 				itemComponent = classes.Item(useFunction = castHeal)
 				item = classes.Object(x, y, '!', "healing potion", libtcod.light_red, item = itemComponent)
-			elif choice < 70+15:
+			elif choice < 70+10:
 				#Create lightning bolt scroll
 				itemComponent = classes.Item(useFunction = castLightning)
 				item = classes.Object(x, y, '?', "scroll of lightning bolt", libtcod.light_yellow, item = itemComponent)
+			elif choice < 70+10+10:
+				#Create fireball scroll
+				itemComponent = classes.Item(useFunction = castFireball)
+				item = classes.Object(x, y, '?', "scroll of fireball", libtcod.light_yellow, item = itemComponent)
 			else:
 				#Create confuse scroll
 				itemComponent = classes.Item(useFunction = castConfusion)
@@ -332,6 +358,22 @@ def castConfusion():
 	monster.ai = classes.ConfusedMonster(oldAI)
 	monster.ai.owner = monster  #Tell new component who owns it
 	globfun.message("The eyes of the " + monster.name + " look vacant, and it begins to stumble around!", libtcod.light_green)
+
+#Cast fireball spell
+def castFireball():
+	#Ask player for target tile to throw fireball at
+	globfun.message("Left-click a target tile for the fireball, or right-click to cancel.", libtcod.light_cyan)
+	(x, y) = targetTile()
+
+	if x is None:
+		return 'cancelled'
+	globfun.message("The fireball explodes, burning everthing within " + str(FIREBALL_RADIUS) + " tiles!", libtcod.orange)
+
+	#Damage every fighter in range, including player
+	for object in globs.objects:
+		if object.distance(x, y) <= FIREBALL_RADIUS and object.fighter:
+			globfun.message("The " + object.name + " gets burned for " + str(FIREBALL_DAMAGE) + " hit points.", libtcod.orange)
+			object.fighter.takeDamage(FIREBALL_DAMAGE)
 
 #Drawing/rendering functions
 #Draw all objects in list
