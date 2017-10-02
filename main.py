@@ -75,7 +75,7 @@ def handle_keys():
 			if keyChar == 'i':
 				chosenItem = inventoryMenu("Press the key next to an item to use it, or any other to cancel.\n")
 				if chosenItem is not None:
-					chosenItem.use()
+					inventoryUseMenu(chosenItem)
 
 			#Access debug mode/cheats
 			if keyChar == 'q':
@@ -520,6 +520,19 @@ def inventoryMenu(header):
 	#If item was chosen, return it
 	if index is None or len(globs.inventory) == 0: return None
 	return globs.inventory[index].item
+
+#*****FIGURE OUT HOW TO ERASE INVENTORY MENU FROM UNDERNEATH!!!****
+#Choose action to do with a selected item
+def inventoryUseMenu(chosenItem):
+	options = ["Use", "Drop"]
+
+	index = menu("Select action to take with item.", options, INVENTORY_WIDTH)
+
+	#Perform action with item
+	if index == 0:  #Use
+		chosenItem.use()
+	elif index == 1:  #Drop
+		chosenItem.drop()
 
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):

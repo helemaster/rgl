@@ -264,6 +264,14 @@ class Item:
 				globs.inventory.remove(self.owner)  #Consume after use unless it was cancelled
 				self.useFunction()
 
+	#Drop an item to the ground below player
+	def drop(self):
+		globs.objects.append(self.owner)
+		globs.inventory.remove(self.owner)
+		self.owner.x = globs.player.x
+		self.owner.y = globs.player.y
+		globfun.message("You dropped a " + self.owner.name + ".", libtcod.yellow)
+
 
 ###########################################################
 ###########################################################
