@@ -18,6 +18,7 @@ INVENTORY_WIDTH = 50
 HEAL_AMOUNT = 10
 LIGHTNING_DAMAGE = 20
 LIGHTNING_RANGE = 5
+CONFUSE_RANGE = 8
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -248,11 +249,14 @@ def placeObjects(room):
 				#Create healing potion
 				itemComponent = classes.Item(useFunction = castHeal)
 				item = classes.Object(x, y, '!', "healing potion", libtcod.light_red, item = itemComponent)
-			else:
+			elif choice < 70+15:
 				#Create lightning bolt scroll
 				itemComponent = classes.Item(useFunction = castLightning)
 				item = classes.Object(x, y, '?', "scroll of lightning bolt", libtcod.light_yellow, item = itemComponent)
-
+			else:
+				#Create confuse scroll
+				itemComponent = classes.Item(useFunction = castConfusion)
+				item = classes.Object(x, y, '?', "scroll of confusion", libtcod.light_yellow, item = itemComponent)
 			globs.objects.append(item)
 			item.sendToBack()
 
@@ -315,6 +319,19 @@ def castLightning():
 	globfun.message("A lightning bolt strikes the " + monster.name + " with a loud crack! The damage is " + str(LIGHTNING_DAMAGE) + " hit points.", libtcod.light_blue)
 	monster.fighter.takeDamage(LIGHTNING_DAMAGE)
 
+#Cast confusion spell
+def castConfusion():
+	#Find closest enemy in range and confuse it
+	monster = closestMonster(CONFUSE_RANGE)
+	if monster is None:   #No enemy found in range
+		message("No enemy is close enough to confuse.", libtcod.red)
+		return "cancelled"
+
+	#Replace monster's AI with confused AI
+	oldAI = monster.ai
+	monster.ai = classes.ConfusedMonster(oldAI)
+	monster.ai.owner = monster  #Tell new component who owns it
+	globfun.message("The eyes of the " + monster.name + " look vacant, and it begins to stumble around!", libtcod.light_green)
 
 #Drawing/rendering functions
 #Draw all objects in list
@@ -491,7 +508,6 @@ def dbgFunctions(choice):
 
 	elif choice == "Get item":
 		globfun.message("This function not implemented yet.", libtcod.red)
-
 
 ###########################################################
 #Main game loop & Initialization

@@ -27,6 +27,9 @@ COLOR_LIGHT_GROUND = libtcod.Color(200, 180, 50)
 #Inventory capacity
 INVENTORY_SIZE = 26
 
+#Other constants
+CONFUSE_TURNS = 10
+
 #Variables
 #Create main off-screen console
 con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
@@ -198,7 +201,7 @@ class Fighter:
 		if self.hp > self.maxHP:
 			self.hp = self.maxHP
 
-
+#Monster behavior components
 ###########################################################
 #BasicMonster - basic monster AI
 ###########################################################
@@ -215,6 +218,23 @@ class BasicMonster:
 			elif globs.player.fighter.hp > 0:
 				monster.fighter.attack(globs.player)
 
+###########################################################
+#ConfusedMonster - monster manupilated by a spell
+###########################################################
+class ConfusedMonster:
+	def __init__(self, oldAI, numTurns = CONFUSE_TURNS):
+		self.oldAI = oldAI
+		self.numTurns = numTurns
+
+	def takeTurn(self):
+		if self.numTurns > 0:   #Still confused
+			#Move randomly and decrease number of turns confused
+			self.owner.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+			self.numTurns -= 1
+		else:
+			#Restore previous AI
+			self.owner.ai = self.oldAI
+			globfun.message("The" + self.owner.name + " snaps out of confusion!", libtcod.orange) 
 ###########################################################
 #Item - can be picked up & used
 ###########################################################
