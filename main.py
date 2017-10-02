@@ -13,7 +13,11 @@ import globfun
 #Constants
 LIMIT_FPS = 20
 INVENTORY_WIDTH = 50
+
+#Gameplay
 HEAL_AMOUNT = 10
+LIGHTNING_DAMAGE = 20
+LIGHTNING_RANGE = 5
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -66,11 +70,8 @@ def handle_keys():
 
 			#Show inventory & use an item if selected
 			if keyChar == 'i':
-				print("pressed i")
 				chosenItem = inventoryMenu("Press the key next to an item to use it, or any other to cancel.\n")
-				print(chosenItem)
 				if chosenItem is not None:
-					print("chosenItem not none")
 					chosenItem.use()
 
 			#Access debug mode/cheats
@@ -242,13 +243,34 @@ def placeObjects(room):
 
 		#Only place if tile isn't blocked
 		if not globfun.isBlocked(x, y):
-			#Create HP potion
-			itemComponent = classes.Item(useFunction = castHeal)
-			item = classes.Object(x, y, "!", "healing potion", libtcod.light_red, item = itemComponent)
+			choice = libtcod.random_get_int(0, 0, 100)
+			if choice < 70:
+				#Create healing potion
+				itemComponent = classes.Item(useFunction = castHeal)
+				item = classes.Object(x, y, '!', "healing potion", libtcod.light_red, item = itemComponent)
+			else:
+				#Create lightning bolt scroll
+				itemComponent = classes.Item(useFunction = castLightning)
+				item = classes.Object(x, y, '?', "scroll of lightning bolt", libtcod.light_yellow, item = itemComponent)
 
 			globs.objects.append(item)
 			item.sendToBack()
 
+#Gameplay functions
+#Find closest monster - find closest enemy up to max range and in player FOV
+def closestMonster(maxRange):
+	closestEnemy = None
+	closestDist = maxRange + 1
+
+	for object in globs.objects:
+		if object.fighter and not object == globs.player and libtcod.map_is_in_fov(globs.fovMap, object.x, object.y):
+			#Calculate distance between player and this object
+			dist = globs.player.distanceTo(object)
+			if dist < closestDist:
+				closestEnemy = object
+				closestDist = dist
+
+	return closestEnemy
 
 #Death handling
 #Kill player, change character to corpse, change game state
@@ -274,14 +296,25 @@ def monsterDeath(monster):
 #Gameplay functions
 #Heal the player
 def castHeal():
-	print("castHeal")
 	if globs.player.fighter.hp == globs.player.fighter.maxHP:
-		print("player hp is max")
 		globfun.message("You are already at full health.", libtcod.red)
 		return "cancelled"
 
 	globfun.message("Your wounds start to feel better.", libtcod.light_violet)
 	globs.player.fighter.heal(HEAL_AMOUNT)
+
+#Cast lightning spell
+def castLightning():
+	#Find closest enemy (inside a maximum range) and damage it
+	monster = closestMonster(LIGHTNING_RANGE)
+	if monster is None:   #No enemy found in visible maximum range
+		globfun.message("No enemy is close enough to strike.", libtcod.red)
+		return "cancelled"
+
+	#Attack enemy
+	globfun.message("A lightning bolt strikes the " + monster.name + " with a loud crack! The damage is " + str(LIGHTNING_DAMAGE) + " hit points.", libtcod.light_blue)
+	monster.fighter.takeDamage(LIGHTNING_DAMAGE)
+
 
 #Drawing/rendering functions
 #Draw all objects in list
@@ -419,7 +452,8 @@ def inventoryMenu(header):
 
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
-	options = ["Godmode", "Ghostmode"]
+	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
+		"Kill self", "Get item"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -431,6 +465,7 @@ def debugMenu(header):
 def dbgFunctions(choice): 
 	if choice == "Godmode":
 		globs.player.fighter.hp = -9999
+		globs.player.fighter.power = 9999
 	
 	elif choice == "Ghostmode": 
 		#Unblock all objects
@@ -441,6 +476,22 @@ def dbgFunctions(choice):
 			for tile in list:
 				tile.blocked = False
 				tile.blockSight = False
+
+	elif choice == "Heal":
+		globs.player.fighter.hp = globs.player.fighter.maxHP
+
+	elif choice == "Boost attack":
+		globs.player.fighter.power = 9999
+
+	elif choice == "Take damage":
+		globs.player.fighter.takeDamage(5)
+
+	elif choice == "Kill self":
+		globs.player.fighter.takeDamage(500)
+
+	elif choice == "Get item":
+		globfun.message("This function not implemented yet.", libtcod.red)
+
 
 ###########################################################
 #Main game loop & Initialization
