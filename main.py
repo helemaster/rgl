@@ -121,6 +121,18 @@ def targetTile(maxRange = None):
 		if mouse.rbutton_pressed or key.vk == libtcod.KEY_ESCAPE:
 			return (None, None)
 
+#Target a specific monster & return it
+def targetMonster(maxRange = None):
+	while True:
+		(x, y) = targetTile(maxRange)
+		if x is None:  #Cancelled
+			return None
+
+		#Return first clicked monster
+		for object in globs.objects:
+			if object.x == x and object.y == y and object.fighter and object != globs.player:
+				return object
+
 def playerMoveOrAttack(dx, dy):
 	global fovRecompute
 
@@ -347,11 +359,11 @@ def castLightning():
 
 #Cast confusion spell
 def castConfusion():
-	#Find closest enemy in range and confuse it
-	monster = closestMonster(CONFUSE_RANGE)
-	if monster is None:   #No enemy found in range
-		message("No enemy is close enough to confuse.", libtcod.red)
-		return "cancelled"
+	#Ask player to select monster
+	globfun.message("Left-click an enemy to confuse it, or right-click to cancel.", libtcod.light_cyan)
+	monster = targetMonster(CONFUSE_RANGE)
+	if monster is None:
+		return 'cancelled'
 
 	#Replace monster's AI with confused AI
 	oldAI = monster.ai
