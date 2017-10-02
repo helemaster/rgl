@@ -192,6 +192,14 @@ class Fighter:
 		else:
 			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " but it has no effect!", libtcod.white)
 
+	#Heal by given amount w/o going over maximum
+	def heal(self, amount):
+		print("heal function")
+		self.hp += amount
+		if self.hp > self.maxHP:
+			self.hp = self.maxHP
+
+
 ###########################################################
 #BasicMonster - basic monster AI
 ###########################################################
@@ -212,6 +220,9 @@ class BasicMonster:
 #Item - can be picked up & used
 ###########################################################
 class Item:
+	def __init__(self, useFunction = None):
+		self.useFunction = useFunction  #What the item does
+
 	#Add to player's inventory and remove from map
 	def pickUp(self):
 		if len(globs.inventory) >= INVENTORY_SIZE:
@@ -220,3 +231,24 @@ class Item:
 			globs.inventory.append(self.owner)
 			globs.objects.remove(self.owner)
 			globfun.message("Aquired a " + self.owner.name + ".", libtcod.green)
+
+	#Use item - call its useFunction if defined
+	def use(self):
+		print("use")
+		if self.useFunction is None:
+			print("useFunction is None")
+			globfun.message("The " + self.owner.name + " cannot be used.")
+		else:
+			print("useFunction not none")
+			if self.useFunction != "cancelled":
+				print("useFunction is not cancelled")
+				globs.inventory.remove(self.owner)  #Consume after use unless it was cancelled
+				self.useFunction()
+
+
+###########################################################
+###########################################################
+#MISCELLANEOUS FUNCTIONS
+###########################################################
+###########################################################
+

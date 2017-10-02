@@ -13,6 +13,7 @@ import globfun
 #Constants
 LIMIT_FPS = 20
 INVENTORY_WIDTH = 50
+HEAL_AMOUNT = 10
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -63,10 +64,19 @@ def handle_keys():
 						object.item.pickUp()
 						break
 
-			#Show inventory
+			#Show inventory & use an item if selected
 			if keyChar == 'i':
-				inventoryMenu("Press the key next to an item to use it, or any other to cancel.\n")
+				print("pressed i")
+				chosenItem = inventoryMenu("Press the key next to an item to use it, or any other to cancel.\n")
+				print(chosenItem)
+				if chosenItem is not None:
+					print("chosenItem not none")
+					chosenItem.use()
 
+			#Access debug mode/cheats
+			if keyChar == 'q':
+				choice = debugMenu("DEBUG MENU\n")
+				dbgFunctions(choice)
 
 			return 'no-turn'
 
@@ -233,7 +243,7 @@ def placeObjects(room):
 		#Only place if tile isn't blocked
 		if not globfun.isBlocked(x, y):
 			#Create HP potion
-			itemComponent = classes.Item()
+			itemComponent = classes.Item(useFunction = castHeal)
 			item = classes.Object(x, y, "!", "healing potion", libtcod.light_red, item = itemComponent)
 
 			globs.objects.append(item)
@@ -261,6 +271,17 @@ def monsterDeath(monster):
 	monster.name = 'remains of ' + monster.name
 	monster.sendToBack()
 
+#Gameplay functions
+#Heal the player
+def castHeal():
+	print("castHeal")
+	if globs.player.fighter.hp == globs.player.fighter.maxHP:
+		print("player hp is max")
+		globfun.message("You are already at full health.", libtcod.red)
+		return "cancelled"
+
+	globfun.message("Your wounds start to feel better.", libtcod.light_violet)
+	globs.player.fighter.heal(HEAL_AMOUNT)
 
 #Drawing/rendering functions
 #Draw all objects in list
@@ -377,15 +398,49 @@ def menu(header, options, width):
 	libtcod.console_flush()
 	key = libtcod.console_wait_for_keypress(True)
 
+	#Convert ASCII to index - if it corresponds to an option, return it
+	index = key.c - ord('a')
+	if index >= 0 and index < len(options): return index
+	return None  #if something other than an option was pressed
+
+
 #Inventory menu - show menu w/ each item in inventory as an option
 def inventoryMenu(header):
 	if len(globs.inventory) == 0:
 		options = ["Inventory is empty."]
-	else:
+	else:#If item was chosen, return it
 		options = [item.name for item in globs.inventory]  #Populate with inventory items
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
+	#If item was chosen, return it
+	if index is None or len(globs.inventory) == 0: return None
+	return globs.inventory[index].item
+
+#Debug menu - menu with debug options and cheats
+def debugMenu(header):
+	options = ["Godmode", "Ghostmode"]
+
+	index = menu(header, options, INVENTORY_WIDTH)
+
+	#If item was chosen, return it
+	if index is None: return None
+	return options[index]
+
+#Debugging functions
+def dbgFunctions(choice): 
+	if choice == "Godmode":
+		globs.player.fighter.hp = -9999
+	
+	elif choice == "Ghostmode": 
+		#Unblock all objects
+		for object in globs.objects:
+			object.blocks = False
+		#Unblock all map tiles
+		for list in globs.map:
+			for tile in list:
+				tile.blocked = False
+				tile.blockSight = False
 
 ###########################################################
 #Main game loop & Initialization
