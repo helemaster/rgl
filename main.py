@@ -6,9 +6,10 @@
 ###########################################################
 
 import libtcodpy as libtcod
-import classes
-import globs
-import globfun
+import classes   #Classes
+import globs     #Global variables & constants
+import globfun   #GLobal functions
+import shelve    #Saving & loading with dictionaries
 
 #Constants
 LIMIT_FPS = 20
@@ -30,6 +31,8 @@ TORCH_RADIUS = 10
 #Population
 MAX_ROOM_MONSTERS = 3
 MAX_ROOM_ITEMS = 2
+
+fovRecompute = True
 
 ###########################################################
 #Functions
@@ -157,6 +160,9 @@ def playerMoveOrAttack(dx, dy):
 #Map functions
 #Generate 2D map list
 def makeMap():
+
+	#Pre-game set-up
+	globs.objects = [globs.player]  #list holding all active objects
 
 	#Fill map with blocked tiles
 	globs.map = [[classes.Tile(True)
@@ -475,6 +481,8 @@ def menu(header, options, width):
 
 	#Calculate total height for header and one line per option
 	headerHeight = libtcod.console_get_height_rect(classes.con, 0, 0, width, globs.SCREEN_HEIGHT, header)
+	if header == "":
+		headerHeight = 0
 	height = len(options) + headerHeight
 
 	#Create console for menu window]
@@ -502,11 +510,43 @@ def menu(header, options, width):
 	libtcod.console_flush()
 	key = libtcod.console_wait_for_keypress(True)
 
+	#Fullscreen toggle
+	if key.vk == libtcod.KEY_ENTER and key.lalt:
+		libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
+
 	#Convert ASCII to index - if it corresponds to an option, return it
 	index = key.c - ord('a')
 	if index >= 0 and index < len(options): return index
 	return None  #if something other than an option was pressed
 
+#Msgbox formed from menu components
+def msgbox(text, width=50):
+	menu(text, [], width)
+
+#Main menu
+def mainMenu():
+	img = libtcod.image_load("mainMenu.png")
+
+	while not libtcod.console_is_window_closed():
+		#Show background image
+		libtcod.image_blit_2x(img, 0, 0, 0)
+
+		#Show options and wait for player choice
+		choice = menu("", ["New Game", "Continue", "Quit"], 24)
+
+		if choice == 1:  #Load game
+			try:
+				loadGame()
+			except:
+				msgbox("\nNo saved game to load.\n", 24)
+				continue
+			playGame()
+
+		if choice == 0: #New game
+			newGame()
+			playGame()
+		elif choice == 2:  #Quit
+			break
 
 #Inventory menu - show menu w/ each item in inventory as an option
 def inventoryMenu(header):
@@ -576,75 +616,120 @@ def dbgFunctions(choice):
 	elif choice == "Get item":
 		globfun.message("This function not implemented yet.", libtcod.red)
 
-###########################################################
-#Main game loop & Initialization
-###########################################################
+#Game state & initialization functions
+#Begin new game
+def newGame():
+	#Create player
+	fighterComponent = classes.Fighter(hp = 30, defense = 1, power = 5, deathFunction = playerDeath) #Create fighter component for player
+	globs.player = classes.Object(0, 0, '@', 'player', libtcod.white, blocks = True, fighter = fighterComponent)  #declare player object
 
-#Pre-game set-up
-#Variables
-fighterComponent = classes.Fighter(hp = 30, defense = 1, power = 5, deathFunction = playerDeath) #Create fighter component for player
-globs.player = classes.Object(0, 0, '@', 'player', libtcod.white, blocks = True, fighter = fighterComponent)  #declare player object
-globs.objects = [globs.player]  #list holding all active objects
+	#Generate map
+	makeMap()
 
+	#Initialize FOV map
+	initFOV()
+
+	#Set state to playing
+	globs.gameState = 'playing'
+
+	#Print welcoming message
+	globfun.message("Welcome, stranger! Prepare to perish!", libtcod.lighter_green)
+
+#Save a game to a shelve to write game data
+def saveGame():
+	file = shelve.open("savegame", "n")
+	file["map"] = globs.map
+	file["objects"] = globs.objects
+	file["player-index"] = globs.objects.index(globs.player)  #Index of player in objects list
+	file["inventory"] = globs.inventory
+	file["gameMsgs"] = globs.gameMsgs
+	file ["gameState"] = globs.gameState
+	file.close()
+
+#Load a saved shelve
+def loadGame():
+	file = shelve.open("savegame", "r")
+	globs.map = file["map"]
+	globs.objects = file["objects"]
+	globs.player = globs.objects[file["player-index"]]
+	globs.inventory = file["inventory"]
+	globs.gameMsgs = file["gameMsgs"]
+	globs.gameState = file["gameState"]
+	file.close()
+
+	initFOV()
+
+#Initialize FOV map
+def initFOV():
+	fovRecompute = True
+
+	#Initialize FOV map
+	globs.fovMap = libtcod.map_new(classes.MAP_WIDTH, classes.MAP_HEIGHT)
+	for y in range(classes.MAP_HEIGHT):
+		for x in range(classes.MAP_WIDTH):
+			libtcod.map_set_properties(globs.fovMap, x, y, not globs.map[x][y].blockSight, not globs.map[x][y].blocked)
+
+	#Clear the console so previous game maps don't show up
+	libtcod.console_clear(classes.con)
+
+#Play game - player actions and game loop
+def playGame():
+	global key, mouse
+
+	#Mouse and key input handling
+	mouse = libtcod.Mouse()
+	key = libtcod.Key()
+
+
+	playerAction = None
+
+	#Main loop
+	while not libtcod.console_is_window_closed():
+		#Check for key presses
+		libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, key, mouse)
+
+		#Render objects & map
+		renderAll()
+	
+		libtcod.console_flush() #Present changes to console
+
+		#Clear objects
+		for object in globs.objects:
+			object.clear()
+
+
+		#Key handling
+		globs.playerAction = handle_keys()
+		if globs.playerAction == 'exit':
+			saveGame()  #Auto-save when quitting
+			break
+	
+
+		#Let AIs take turn
+		if globs.gameState == 'playing' and globs.playerAction != 'no-turn':
+			for object in globs.objects:
+				if object.ai:
+					object.ai.takeTurn()
+
+###########################################################
+#Initialization
+###########################################################
 #Set font
 libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 
 #Initialize window
 libtcod.console_init_root(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 'mrgl', False)
 
-#Generate map
-makeMap()
-
-#Initialize FOV map
-globs.fovMap = libtcod.map_new(classes.MAP_WIDTH, classes.MAP_HEIGHT)
-for y in range(classes.MAP_HEIGHT):
-	for x in range(classes.MAP_WIDTH):
-		libtcod.map_set_properties(globs.fovMap, x, y, not globs.map[x][y].blockSight, not globs.map[x][y].blocked)
-
-#Recompute FOV for changes during game
-fovRecompute = True
-
-#Set state to playing
-globs.gameState = 'playing'
-
 #Initialize GUI panel
 globs.panel = libtcod.console_new(globs.SCREEN_WIDTH, globs.PANEL_HEIGHT)
-
-#Print welcoming message
-globfun.message("Welcome, stranger! Prepare to perish!", libtcod.lighter_green)
-
-#Mouse and key input handling
-mouse = libtcod.Mouse()
-key = libtcod.Key()
 
 #Limit FPS
 libtcod.sys_set_fps(LIMIT_FPS)
 
-#Main loop
-while not libtcod.console_is_window_closed():
+#Show game title and credits
+libtcod.console_set_default_foreground(0, libtcod.white)
+libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, globs.SCREEN_HEIGHT / 2 - 4, libtcod.BKGND_NONE, libtcod.CENTER, "MODERNIZED ROGUELIKE")
+libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER, "Programming & Design: Holly LeMaster, 2017")
 
-	#Check for key presses
-	libtcod.sys_check_for_event(libtcod.EVENT_KEY_PRESS|libtcod.EVENT_MOUSE, key, mouse)
-
-	#Render objects & map
-	renderAll()
-	
-	libtcod.console_flush() #Present changes to console
-
-	#Clear objects
-	for object in globs.objects:
-		object.clear()
-
-
-	#Key handling
-	globs.playerAction = handle_keys()
-	
-	if globs.playerAction == 'exit':
-		break
-	
-
-	#Let AIs take turn
-	if globs.gameState == 'playing' and globs.playerAction != 'no-turn':
-		for object in globs.objects:
-			if object.ai:
-				object.ai.takeTurn()
+#Start playing
+mainMenu()
