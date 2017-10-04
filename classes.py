@@ -45,12 +45,13 @@ con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 #Object - generic object, always represented by character
 ###########################################################
 class Object:
-	def __init__(self, x, y, char, name, color, blocks = False, fighter = None, ai = None, item = None):
+	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None):
 		self.x = x
 		self.y = y
 		self.char = char
 		self.name = name
 		self.blocks = blocks
+		self.alwaysVisible = alwaysVisible
 		self.color = color
 
 		#Components
@@ -78,7 +79,7 @@ class Object:
 	#Set color and draw character for object
 	def draw(self):
 		#Only show object if it's visible to player
-		if libtcod.map_is_in_fov(globs.fovMap, self.x, self.y):
+		if(libtcod.map_is_in_fov(globs.fovMap, self.x, self.y) or (self.alwaysVisible and globs.map[self.x][self.y].explored)):
 			libtcod.console_set_default_foreground(con, self.color)
 			libtcod.console_put_char(con, self.x, self.y, self.char, libtcod.BKGND_NONE)
 
