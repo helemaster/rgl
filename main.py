@@ -40,7 +40,7 @@ fovRecompute = True
 
 #Input functions
 def handle_keys():
-	global key
+	global key, stairs
 
 	#Fullscreen toggle
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -84,6 +84,13 @@ def handle_keys():
 			if keyChar == 'q':
 				choice = debugMenu("DEBUG MENU\n")
 				dbgFunctions(choice)
+
+			#Walk down stairs
+			if keyChar == "<":
+				print("pressed <")
+				if stairs.x == globs.player.x and stairs.y == globs.player.y:
+					print("player is on stairs")
+					nextLevel()
 
 			return 'no-turn'
 
@@ -160,6 +167,7 @@ def playerMoveOrAttack(dx, dy):
 #Map functions
 #Generate 2D map list
 def makeMap():
+	global stairs
 
 	#Pre-game set-up
 	globs.objects = [globs.player]  #list holding all active objects
@@ -216,6 +224,11 @@ def makeMap():
 			#Append new room to list
 			rooms.append(newRoom)
 			numRooms += 1
+
+	#Create stairs at center of last room
+	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white)
+	globs.objects.append(stairs)
+	stairs.sendToBack()   #So actors can walk on them
 
 #Create a room
 def createRoom(room):
@@ -447,6 +460,9 @@ def renderAll():
 	#Show player stats
 	renderBar(1, 1, globs.BAR_WIDTH, 'HP', globs.player.fighter.hp, globs.player.fighter.maxHP, libtcod.light_red, libtcod.darker_red)
 
+	#Display dungeon level:
+	libtcod.console_print_ex(globs.panel, 1, 3, libtcod.BKGND_NONE, libtcod.LEFT, "Floor: " + str(dungeonLevel))
+
 	#Display names of objects under mouse
 	libtcod.console_set_default_foreground(globs.panel, libtcod.light_gray)
 	libtcod.console_print_ex(globs.panel, 1, 0, libtcod.BKGND_NONE, libtcod.LEFT, getNamesUnderMouse())
@@ -531,6 +547,10 @@ def mainMenu():
 		#Show background image
 		libtcod.image_blit_2x(img, 0, 0, 0)
 
+		libtcod.console_set_default_foreground(0, libtcod.white)
+		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 20, libtcod.BKGND_NONE, libtcod.CENTER, "MODERNIZED ROGUELIKE")
+		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 22, libtcod.BKGND_NONE, libtcod.CENTER, "Programming & Design: Holly LeMaster, 2017")
+		libtcod.console_print_ex(0, 1, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.LEFT, "verSlice 1.16")
 		#Show options and wait for player choice
 		choice = menu("", ["New Game", "Continue", "Quit"], 24)
 
@@ -619,9 +639,14 @@ def dbgFunctions(choice):
 #Game state & initialization functions
 #Begin new game
 def newGame():
+	global dungeonLevel
+
 	#Create player
 	fighterComponent = classes.Fighter(hp = 30, defense = 1, power = 5, deathFunction = playerDeath) #Create fighter component for player
 	globs.player = classes.Object(0, 0, '@', 'player', libtcod.white, blocks = True, fighter = fighterComponent)  #declare player object
+
+	#Set dungeon level
+	dungeonLevel = 1
 
 	#Generate map
 	makeMap()
@@ -637,27 +662,51 @@ def newGame():
 
 #Save a game to a shelve to write game data
 def saveGame():
+	global stairs, dungeonLevel
+
 	file = shelve.open("savegame", "n")
 	file["map"] = globs.map
 	file["objects"] = globs.objects
-	file["player-index"] = globs.objects.index(globs.player)  #Index of player in objects list
+	file["playerIndex"] = globs.objects.index(globs.player)  #Index of player in objects list
 	file["inventory"] = globs.inventory
 	file["gameMsgs"] = globs.gameMsgs
 	file ["gameState"] = globs.gameState
+	file["stairsIndex"] = globs.objects.index(stairs)
+	file["dungeonLevel"] = dungeonLevel
 	file.close()
 
 #Load a saved shelve
 def loadGame():
+	global stairs, dungeonLevel
+
 	file = shelve.open("savegame", "r")
 	globs.map = file["map"]
 	globs.objects = file["objects"]
-	globs.player = globs.objects[file["player-index"]]
+	globs.player = globs.objects[file["playerIndex"]]
 	globs.inventory = file["inventory"]
 	globs.gameMsgs = file["gameMsgs"]
 	globs.gameState = file["gameState"]
+	stairs = globs.objects[file["stairsIndex"]]
+	dungeonLevel = file["dungeonLevel"] 
 	file.close()
 
 	initFOV()
+
+#Create new level when player goes down stairs
+def nextLevel():
+	global dungeonLevel
+
+	print("next level")
+
+	globfun.message("You take a moment to rest, and recover your strength.", libtcod.light_violet)
+	globs.player.fighter.heal(globs.player.fighter.maxHP / 2)
+
+	globfun.message("You descend deeper...", libtcod.red)
+
+	#Make new level
+	makeMap()
+	initFOV()
+	dungeonLevel += 1
 
 #Initialize FOV map
 def initFOV():
@@ -725,11 +774,6 @@ globs.panel = libtcod.console_new(globs.SCREEN_WIDTH, globs.PANEL_HEIGHT)
 
 #Limit FPS
 libtcod.sys_set_fps(LIMIT_FPS)
-
-#Show game title and credits
-libtcod.console_set_default_foreground(0, libtcod.white)
-libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, globs.SCREEN_HEIGHT / 2 - 4, libtcod.BKGND_NONE, libtcod.CENTER, "MODERNIZED ROGUELIKE")
-libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.CENTER, "Programming & Design: Holly LeMaster, 2017")
 
 #Start playing
 mainMenu()
