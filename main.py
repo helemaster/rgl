@@ -12,6 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
+VERSION = "verSlice 1.19"
 LIMIT_FPS = 20
 INVENTORY_WIDTH = 50
 
@@ -40,7 +41,7 @@ fovRecompute = True
 
 #Input functions
 def handle_keys():
-	global key, stairs
+	global key, stairs, window
 
 	#Fullscreen toggle
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -490,6 +491,8 @@ def renderBar(x, y, totalWidth, name, value, max, barColor, backColor):
 #Menu functions
 #Generic menu function
 def menu(header, options, width):
+	global window
+
 	#Make sure there aren't too many menu items
 	if len(options) > 26:
 		raise ValueError("Cannot have a menu with more than 26 options.")
@@ -511,15 +514,16 @@ def menu(header, options, width):
 	y = headerHeight
 	letterIndex = ord('a')   #Ord returns ASCII code of letter
 	for optionText in options:
-		text = '(' + chr(letterIndex) + ')' + optionText
-		libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
-		y += 1
-		letterIndex += 1
+		if optionText != "":
+			text = '(' + chr(letterIndex) + ')' + optionText
+			libtcod.console_print_ex(window, 0, y, libtcod.BKGND_NONE, libtcod.LEFT, text)
+			y += 1
+			letterIndex += 1
 
 	#Blit contents of window to root console
 	x = globs.SCREEN_WIDTH / 2 - width / 2
 	y = globs.SCREEN_HEIGHT / 2 - height / 2
-	libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 0.7)
+	libtcod.console_blit(window, 0, 0, width, height, 0, x, y, 1.0, 1.0)
 
 	#Present root to player and wait for keypress
 	libtcod.console_flush()
@@ -549,7 +553,7 @@ def mainMenu():
 		libtcod.console_set_default_foreground(0, libtcod.white)
 		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 20, libtcod.BKGND_NONE, libtcod.CENTER, "MODERNIZED ROGUELIKE")
 		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 22, libtcod.BKGND_NONE, libtcod.CENTER, "Programming & Design: Holly LeMaster, 2017")
-		libtcod.console_print_ex(0, 1, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.LEFT, "verSlice 1.16")
+		libtcod.console_print_ex(0, 1, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.LEFT, VERSION)
 		#Show options and wait for player choice
 		choice = menu("", ["New Game", "Continue", "Quit"], 24)
 
@@ -571,7 +575,7 @@ def mainMenu():
 def inventoryMenu(header):
 	if len(globs.inventory) == 0:
 		options = ["Inventory is empty."]
-	else:#If item was chosen, return it
+	else:    #If item was chosen, return it
 		options = [item.name for item in globs.inventory]  #Populate with inventory items
 
 	index = menu(header, options, INVENTORY_WIDTH)
@@ -584,6 +588,11 @@ def inventoryMenu(header):
 #Choose action to do with a selected item
 def inventoryUseMenu(chosenItem):
 	options = ["Use", "Drop"]
+
+	#Fill bottom with blank options so inventory doesn't show through
+	spaces = len(globs.inventory) + 2
+	for x in range(0, spaces):
+		options.append("")
 
 	index = menu("Select action to take with item.", options, INVENTORY_WIDTH)
 
