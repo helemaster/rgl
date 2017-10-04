@@ -9,12 +9,9 @@ import globfun
 import math
 
 #Constants
-SCREEN_WIDTH = 80
-SCREEN_HEIGHT = 50
-
 #Size of map
 MAP_WIDTH = 80
-MAP_HEIGHT = 45
+MAP_HEIGHT = 43
 
 #Room sizes/limits
 ROOM_MAX_SIZE = 10
@@ -27,10 +24,15 @@ COLOR_DARK_GROUND = libtcod.Color(50, 50, 150)
 COLOR_LIGHT_WALL = libtcod.Color(50, 50, 150)
 COLOR_LIGHT_GROUND = libtcod.Color(200, 180, 50)
 
+#Inventory capacity
+INVENTORY_SIZE = 26
+
+#Other constants
+CONFUSE_TURNS = 10
 
 #Variables
 #Create main off-screen console
-con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
+con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 
 
 ###########################################################
@@ -43,7 +45,7 @@ con = libtcod.console_new(SCREEN_WIDTH, SCREEN_HEIGHT)
 #Object - generic object, always represented by character
 ###########################################################
 class Object:
-	def __init__(self, x, y, char, name, color, blocks = False, fighter = None, ai = None):
+	def __init__(self, x, y, char, name, color, blocks = False, fighter = None, ai = None, item = None):
 		self.x = x
 		self.y = y
 		self.char = char
@@ -59,6 +61,10 @@ class Object:
 		self.ai = ai
 		if self.ai:
 			self.ai.owner = self
+
+		self.item = item
+		if self.item:
+			self.item.owner = self
 
 
 	#Functions
@@ -99,6 +105,10 @@ class Object:
 		dy = other.y - self.y
 
 		return math.sqrt(dx ** 2 + dy ** 2)
+
+	#Get distance from object to a tile
+	def distance(self, x, y):
+		return math.sqrt((x - self.x) ** 2 + (y - self.y) ** 2)
 
 	#Make this object drawn first (on bottom)
 	def sendToBack(self):
@@ -168,26 +178,34 @@ class Fighter:
 		self.deathFunction = deathFunction
 
 	def takeDamage(self, damage):
+		#Apply damage, if possible
+		if damage > 0:
+			self.hp -= damage
+
 		#Check if object is dead
 		if self.hp <= 0:
 			function = self.deathFunction
 			if function is not None:
 				function(self.owner)
 
-		#Apply damage, if possible
-		if damage > 0:
-			self.hp -= damage
-
+		
 	def attack(self, target):
 		#Simple formula for attack damage
 		damage = self.power - target.fighter.defense
 
 		if damage > 0:
-			print(self.owner.name.capitalize() + " attacks " + target.name + " for " + str(damage) + " hit points.")
+			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " for " + str(damage) + " hit points.", libtcod.white)
 			target.fighter.takeDamage(damage)
 		else:
-			print(self.owner.name.capitalize() + " attacks " + target.name + " but it has no effect!")
+			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " but it has no effect!", libtcod.white)
 
+	#Heal by given amount w/o going over maximum
+	def heal(self, amount):
+		self.hp += amount
+		if self.hp > self.maxHP:
+			self.hp = self.maxHP
+
+#Monster behavior components
 ###########################################################
 #BasicMonster - basic monster AI
 ###########################################################
@@ -203,3 +221,61 @@ class BasicMonster:
 			#Attack if close enough (if player is alive)
 			elif globs.player.fighter.hp > 0:
 				monster.fighter.attack(globs.player)
+
+###########################################################
+#ConfusedMonster - monster manupilated by a spell
+###########################################################
+class ConfusedMonster:
+	def __init__(self, oldAI, numTurns = CONFUSE_TURNS):
+		self.oldAI = oldAI
+		self.numTurns = numTurns
+
+	def takeTurn(self):
+		if self.numTurns > 0:   #Still confused
+			#Move randomly and decrease number of turns confused
+			self.owner.move(libtcod.random_get_int(0, -1, 1), libtcod.random_get_int(0, -1, 1))
+			self.numTurns -= 1
+		else:
+			#Restore previous AI
+			self.owner.ai = self.oldAI
+			globfun.message("The" + self.owner.name + " snaps out of confusion!", libtcod.orange) 
+###########################################################
+#Item - can be picked up & used
+###########################################################
+class Item:
+	def __init__(self, useFunction = None):
+		self.useFunction = useFunction  #What the item does
+
+	#Add to player's inventory and remove from map
+	def pickUp(self):
+		if len(globs.inventory) >= INVENTORY_SIZE:
+			globfun.message("Your can't fit anything else into your bag.", libtcod.red)
+		else:
+			globs.inventory.append(self.owner)
+			globs.objects.remove(self.owner)
+			globfun.message("Aquired a " + self.owner.name + ".", libtcod.green)
+
+	#Use item - call its useFunction if defined
+	def use(self):
+		if self.useFunction is None:
+			globfun.message("The " + self.owner.name + " cannot be used.")
+		else:
+			if self.useFunction != "cancelled":
+				globs.inventory.remove(self.owner)  #Consume after use unless it was cancelled
+				self.useFunction()
+
+	#Drop an item to the ground below player
+	def drop(self):
+		globs.objects.append(self.owner)
+		globs.inventory.remove(self.owner)
+		self.owner.x = globs.player.x
+		self.owner.y = globs.player.y
+		globfun.message("You dropped a " + self.owner.name + ".", libtcod.yellow)
+
+
+###########################################################
+###########################################################
+#MISCELLANEOUS FUNCTIONS
+###########################################################
+###########################################################
+

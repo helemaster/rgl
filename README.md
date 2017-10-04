@@ -1,16 +1,24 @@
-<h3>HOW TO PLAY</h3>
+verSlice release
+----------------------------------------
+HOW TO PLAY
+----------------------------------------
 
-<ol><li>Open the PLAY.bat file to launch the game.</li></ol>
+1) Open a command prompt.
+2) Change to the installation directory of the game.
+3) Run the following command: "C:\Python27\Python.exe main.py"
+4) The game will launch.
 
-<h3>CONTROLS</h3>
+1) Arrow keys move the player in corresponding directions.
+2) Alt+enter toggles fullscreen.
+3) Esc exits the game.
+4) Bump into monsters to attack them.
+5) I: Inventory
+6) <: Descend stairs
 
-<ol><li>Arrow keys move the player in corresponding directions.</li>
-<li>Alt+enter toggles fullscreen.</li>
-<li>Esc exits the game.</li>
-<li>Bump into monsters to attack them.</li></ol>
-
-<h3>TROUBLESHOOTING</h3>
-
-<ol><li>Make sure Python 2.7 is installed to the C: drive. This is needed for the game to run./li>
-<li>Make sure Python is installed on the C: drive, or change the drive letter in the PLAY.bat file.</li>
-<li>The game crashing when exiting (Python.exe has stopped working) is normal.</li></ol>
+----------------------------------------
+TROUBLESHOOTING
+----------------------------------------
+1) Is Python 2.7 installed to the C: drive?
+	a) Install Python 2.7 to the C: drive. This is needed for the game to run.
+2) The game crashes when I exit: Python.exe has stopped working.
+	a) This is a bug in the verSlice version.

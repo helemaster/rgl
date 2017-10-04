@@ -3,7 +3,9 @@
 #Store global functions for use in multiple files
 ###########################################################
 
+import libtcodpy as libtcod
 import globs
+import textwrap
 
 #Global functions
 
@@ -19,5 +21,19 @@ def isBlocked(x, y):
 			return True
 
 	return False
+
+
+#Create and render game messages
+def message(newMsg, color = libtcod.white):
+	#Split message among multiple lines if needed
+	newMsgLines = textwrap.wrap(newMsg, globs.MSG_WIDTH)
+
+	for line in newMsgLines:
+		#If message buffer is full, remove first line to make room for next
+		if len(globs.gameMsgs) == globs.MSG_HEIGHT:
+			del globs.gameMsgs[0]
+
+		#Add new line as tuple w/ text and color
+		globs.gameMsgs.append( (line, color) )
 
 
