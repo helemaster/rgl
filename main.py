@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "verSlice 1.19"
+VERSION = "alpha 1.0"
 LIMIT_FPS = 20
 INVENTORY_WIDTH = 50
 
