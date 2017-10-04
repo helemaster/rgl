@@ -8,10 +8,6 @@ HOW TO PLAY
 3) Run the following command: "C:\Python27\Python.exe main.py"
 4) The game will launch.
 
-----------------------------------------
-CONTROLS
-----------------------------------------
-
 1) Arrow keys move the player in corresponding directions.
 2) Alt+enter toggles fullscreen.
 3) Esc exits the game.
