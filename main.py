@@ -86,8 +86,7 @@ def handle_keys():
 				dbgFunctions(choice)
 
 			#Walk down stairs
-			if keyChar == "<":
-				print("pressed <")
+			if keyChar == "x":
 				if stairs.x == globs.player.x and stairs.y == globs.player.y:
 					print("player is on stairs")
 					nextLevel()
