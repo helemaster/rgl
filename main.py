@@ -89,6 +89,7 @@ def handle_keys():
 			#Walk down stairs
 			if keyChar == "x":
 				if stairs.x == globs.player.x and stairs.y == globs.player.y:
+					print("player is on stairs")
 					nextLevel()
 
 			return 'no-turn'
@@ -225,7 +226,7 @@ def makeMap():
 			numRooms += 1
 
 	#Create stairs at center of last room
-	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white, alwaysVisible = True)
+	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white)
 	globs.objects.append(stairs)
 	stairs.sendToBack()   #So actors can walk on them
 
@@ -603,10 +604,8 @@ def inventoryUseMenu(chosenItem):
 
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
-	global stairs
-
 	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
-		"Kill self", "Get item", "Find stairs"]
+		"Kill self", "Get item"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -644,10 +643,6 @@ def dbgFunctions(choice):
 
 	elif choice == "Get item":
 		globfun.message("This function not implemented yet.", libtcod.red)
-
-	elif choice == "Find stairs":
-		#Set tile containing stairs to explored
-		globs.map[stairs.x][stairs.y].explored = True
 
 #Game state & initialization functions
 #Begin new game
@@ -708,6 +703,8 @@ def loadGame():
 #Create new level when player goes down stairs
 def nextLevel():
 	global dungeonLevel
+
+	print("next level")
 
 	globfun.message("You take a moment to rest, and recover your strength.", libtcod.light_violet)
 	globs.player.fighter.heal(globs.player.fighter.maxHP / 2)
