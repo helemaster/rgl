@@ -171,11 +171,12 @@ class Rect:
 #Fighter - combat properties and methods component
 ###########################################################
 class Fighter:
-	def __init__(self, hp, defense, power, deathFunction = None):
+	def __init__(self, hp, defense, power, xp, deathFunction = None):
 		self.maxHP = hp
 		self.hp = hp
 		self.defense = defense
 		self.power = power
+		self.xp = xp
 		self.deathFunction = deathFunction
 
 	def takeDamage(self, damage):
@@ -188,6 +189,10 @@ class Fighter:
 			function = self.deathFunction
 			if function is not None:
 				function(self.owner)
+
+			#Give xp for player
+			if self.owner != globs.player:
+				globs.player.fighter.xp += self.xp
 
 		
 	def attack(self, target):

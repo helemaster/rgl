@@ -12,8 +12,8 @@ HOW TO PLAY
 2) Alt+enter toggles fullscreen.
 3) Esc exits the game.
 4) Bump into monsters to attack them.
-5) I: Inventory
-6) <: Descend stairs
+5) i: Inventory
+6) x: Descend stairs
 
 ----------------------------------------
 TROUBLESHOOTING

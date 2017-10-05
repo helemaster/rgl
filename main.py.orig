@@ -2,7 +2,7 @@
 #main.py
 #Base module to run game
 #Holly LeMaster, 2017
-#Version: Alpha
+#Version: Vertical Slice
 ###########################################################
 
 import libtcodpy as libtcod
@@ -12,13 +12,9 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.1.0"   #major.minor.patch
+VERSION = "alpha 1.21"
 LIMIT_FPS = 20
-
-#Menu widths
 INVENTORY_WIDTH = 50
-LEVEL_SCREEN_WIDTH = 40
-CHARACTER_SCREEN_WIDTH = 30
 
 #Gameplay
 HEAL_AMOUNT = 10
@@ -27,8 +23,6 @@ LIGHTNING_RANGE = 5
 CONFUSE_RANGE = 8
 FIREBALL_RADIUS = 3
 FIREBALL_DAMAGE = 12
-LEVEL_UP_BASE = 200
-LEVEL_UP_FACTOR = 150
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -59,31 +53,20 @@ def handle_keys():
 
 	#Player can only move if game state is "playing"
 	if globs.gameState == 'playing':
-		#Movement - use arrow keys or numpad keys, with numpad5 or . for waiting
-		if key.vk == libtcod.KEY_UP or key.vk == libtcod.KEY_KP8:
+		#Movement
+		if key.vk == libtcod.KEY_UP:
 			playerMoveOrAttack(0, -1)
-		elif key.vk == libtcod.KEY_DOWN or key.vk == libtcod.KEY_KP2:
+		elif key.vk == libtcod.KEY_DOWN:
 			playerMoveOrAttack(0, 1)
-		elif key.vk == libtcod.KEY_LEFT or key.vk == libtcod.KEY_KP4:
+		elif key.vk == libtcod.KEY_LEFT:
 			playerMoveOrAttack(-1, 0)
-		elif key.vk == libtcod.KEY_RIGHT or key.vk == libtcod.KEY_KP6:
+		elif key.vk == libtcod.KEY_RIGHT:
 			playerMoveOrAttack(1, 0)
-		#Diagonal movements
-		elif key.vk == libtcod.KEY_HOME or key.vk == libtcod.KEY_KP7:
-			playerMoveOrAttack(-1, -1)
-		elif key.vk == libtcod.KEY_PAGEUP or key.vk == libtcod.KEY_KP9:
-			playerMoveOrAttack(1, -1)
-		elif key.vk == libtcod.KEY_END or key.vk == libtcod.KEY_KP1:
-			playerMoveOrAttack(-1, 1)
-		elif key.vk == libtcod.KEY_PAGEDOWN or key.vk == libtcod.KEY_KP3:
-			playerMoveOrAttack(1, 1)
-		elif key.vk == libtcod.KEY_KP5:
-			pass
 		
 		else:
 			#Check for other keys
 			keyChar = chr(key.c)
-			
+
 			#Pick up item
 			if keyChar == 'g':  
 				#Look for item in player's tile
@@ -106,17 +89,7 @@ def handle_keys():
 			#Walk down stairs
 			if keyChar == "x":
 				if stairs.x == globs.player.x and stairs.y == globs.player.y:
-					print("player is on stairs")
 					nextLevel()
-
-			#View character stats
-			if keyChar == "c":
-				levelUpXP = LEVEL_UP_BASE + globs.player.level * LEVEL_UP_FACTOR
-				msgbox("Character Information\n\nLevel: " + str(globs.player.level) + 
-					"\nExperience: " + str(globs.player.fighter.xp) + "/" + str(levelUpXP) +
-					"\nMaximum HP: " + str(globs.player.fighter.maxHP) +
-					"\nAttack: " + str(globs.player.fighter.power) +
-					"\nDefense: " + str(globs.player.fighter.defense), CHARACTER_SCREEN_WIDTH)
 
 			return 'no-turn'
 
@@ -252,7 +225,7 @@ def makeMap():
 			numRooms += 1
 
 	#Create stairs at center of last room
-	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white)
+	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white, alwaysVisible = True)
 	globs.objects.append(stairs)
 	stairs.sendToBack()   #So actors can walk on them
 
@@ -294,19 +267,19 @@ def placeObjects(room):
 			choice = libtcod.random_get_int(0, 0, 100)
 			if choice < 20:
 				#Create evil tree w/ fighter component, monster ai, & object
-				fighterComponent = classes.Fighter(hp = 10, defense = 4, power = 2, xp = 25, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 10, defense = 4, power = 2, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 't', 'evil tree', libtcod.green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
 			elif choice < 20+40:
-				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 2, xp = 10, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 2, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'r', 'rat', libtcod.light_pink, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
 			elif choice < 20+40+10:
-				fighterComponent = classes.Fighter(hp = 15, defense = 5, power = 4, xp = 35, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 15, defense = 5, power = 4, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'd', 'buck', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
 			else:
-				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 4, xp = 25, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 4, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'h', 'camper', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
 
@@ -372,39 +345,13 @@ def playerDeath(player):
 
 #Kill monster, change character, modify attributes
 def monsterDeath(monster):
-	globfun.message(monster.name.capitalize() + " is dead! You gain " + str(monster.fighter.xp) + " experience points.", libtcod.orange)
+	globfun.message(monster.name.capitalize() + " is dead!", libtcod.orange)
 	monster.color = libtcod.dark_red
 	monster.blocks = False
 	monster.fighter = None
 	monster.ai = None
 	monster.name = 'remains of ' + monster.name
 	monster.sendToBack()
-
-#Check leveling of player
-def checkLevelUp():
-	levelUpXP = LEVEL_UP_BASE + globs.player.level * LEVEL_UP_FACTOR
-
-	if globs.player.fighter.xp >= levelUpXP:  #Level up
-		globs.player.level += 1
-		globs.player.fighter.xp -= levelUpXP
-		globfun.message("Your battle skills grow stronger! You've reached level " + str(globs.player.level) + "!", libtcod.yellow)
-
-		#Increase player stats
-		choice = None
-		while choice == None:
-			choice = menu("Level up! Choose a stat to increase:\n",
-				["Constitution (+20 HP, from " + str(globs.player.fighter.maxHP) + ")",
-				"Strength (+1 attack, from " + str(globs.player.fighter.power) + ")",
-				"Defense (+1 defense, from " + str(globs.player.fighter.defense) + ")"], LEVEL_SCREEN_WIDTH)
-
-		if choice == 0:  #HP
-			globs.player.fighter.maxHP += 20
-			globs.player.fighter.hp += 20
-		elif choice == 1:  #Power
-			globs.player.fighter.power += 1
-		elif choice == 2:   #Defense
-			globs.player.fighter.defense += 1
-
 
 #Gameplay functions
 #Heal the player
@@ -581,7 +528,7 @@ def menu(header, options, width):
 	libtcod.console_flush()
 	key = libtcod.console_wait_for_keypress(True)
 
-	#Fullscreen toggle & exiting
+	#Fullscreen toggle
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
 		libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
 
@@ -656,8 +603,10 @@ def inventoryUseMenu(chosenItem):
 
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
+	global stairs
+
 	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
-		"Kill self", "Get item"]
+		"Kill self", "Get item", "Find stairs"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -696,15 +645,18 @@ def dbgFunctions(choice):
 	elif choice == "Get item":
 		globfun.message("This function not implemented yet.", libtcod.red)
 
+	elif choice == "Find stairs":
+		#Set tile containing stairs to explored
+		globs.map[stairs.x][stairs.y].explored = True
+
 #Game state & initialization functions
 #Begin new game
 def newGame():
 	global dungeonLevel
 
 	#Create player
-	fighterComponent = classes.Fighter(hp = 30, defense = 1, power = 5, xp = 0, deathFunction = playerDeath) #Create fighter component for player
+	fighterComponent = classes.Fighter(hp = 30, defense = 1, power = 5, deathFunction = playerDeath) #Create fighter component for player
 	globs.player = classes.Object(0, 0, '@', 'player', libtcod.white, blocks = True, fighter = fighterComponent)  #declare player object
-	globs.player.level = 1
 
 	#Set dungeon level
 	dungeonLevel = 1
@@ -757,8 +709,6 @@ def loadGame():
 def nextLevel():
 	global dungeonLevel
 
-	print("next level")
-
 	globfun.message("You take a moment to rest, and recover your strength.", libtcod.light_violet)
 	globs.player.fighter.heal(globs.player.fighter.maxHP / 2)
 
@@ -803,9 +753,6 @@ def playGame():
 	
 		libtcod.console_flush() #Present changes to console
 
-		#Make sure player hasn't leveled up
-		checkLevelUp()
-
 		#Clear objects
 		for object in globs.objects:
 			object.clear()
@@ -831,7 +778,7 @@ def playGame():
 libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 
 #Initialize window
-libtcod.console_init_root(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 'mrgl [ALPHA]', False)
+libtcod.console_init_root(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 'mrgl', False)
 
 #Initialize GUI panel
 globs.panel = libtcod.console_new(globs.SCREEN_WIDTH, globs.PANEL_HEIGHT)
