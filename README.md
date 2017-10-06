@@ -14,6 +14,7 @@ HOW TO PLAY
 4) Bump into monsters to attack them.
 5) i: Inventory
 6) x: Descend stairs
+7) c: View character details
 
 ----------------------------------------
 TROUBLESHOOTING
@@ -21,4 +22,4 @@ TROUBLESHOOTING
 1) Is Python 2.7 installed to the C: drive?
 	a) Install Python 2.7 to the C: drive. This is needed for the game to run.
 2) The game crashes when I exit: Python.exe has stopped working.
-	a) This is a bug in the verSlice version.
+	a) This is a bug.

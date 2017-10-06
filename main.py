@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.1.0"   #major.minor.patch
+VERSION = "alpha 1.1.1"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -27,7 +27,7 @@ LIGHTNING_RANGE = 5
 CONFUSE_RANGE = 8
 FIREBALL_RADIUS = 3
 FIREBALL_DAMAGE = 12
-LEVEL_UP_BASE = 200
+LEVEL_UP_BASE = 150
 LEVEL_UP_FACTOR = 150
 
 #FOV 
@@ -39,7 +39,11 @@ TORCH_RADIUS = 10
 MAX_ROOM_MONSTERS = 3
 MAX_ROOM_ITEMS = 2
 
+#Variables
 fovRecompute = True
+
+monsterChances = {"rat":60, "buck":10, "camper":20, "tree":10}
+itemChances = ["heal":70, "lightning":10, "fireball":10, "confuse":10]
 
 ###########################################################
 #Functions
@@ -291,21 +295,21 @@ def placeObjects(room):
 		#Only place if tile isn't blocked
 		if not globfun.isBlocked(x, y):
 			#Determine type of monster & create it
-			choice = libtcod.random_get_int(0, 0, 100)
-			if choice < 20:
+			choice = randomChoice(monsterChances)
+			if choice == "tree":
 				#Create evil tree w/ fighter component, monster ai, & object
 				fighterComponent = classes.Fighter(hp = 10, defense = 4, power = 2, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 't', 'evil tree', libtcod.green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
-			elif choice < 20+40:
+			elif choice == "rat":
 				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 2, xp = 10, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'r', 'rat', libtcod.light_pink, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
-			elif choice < 20+40+10:
+			elif choice == "buck"
 				fighterComponent = classes.Fighter(hp = 15, defense = 5, power = 4, xp = 35, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'd', 'buck', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
-			else:
+			elif choice == "camper"
 				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 4, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'h', 'camper', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
@@ -323,25 +327,47 @@ def placeObjects(room):
 
 		#Only place if tile isn't blocked
 		if not globfun.isBlocked(x, y):
-			choice = libtcod.random_get_int(0, 0, 100)
-			if choice < 70:
+			choice = randomChoice(itemChances)
+			if choice == "heal":
 				#Create healing potion
 				itemComponent = classes.Item(useFunction = castHeal)
 				item = classes.Object(x, y, '!', "healing potion", libtcod.light_red, item = itemComponent)
-			elif choice < 70+10:
+			elif choice == "lightning"
 				#Create lightning bolt scroll
 				itemComponent = classes.Item(useFunction = castLightning)
 				item = classes.Object(x, y, '?', "scroll of lightning bolt", libtcod.light_yellow, item = itemComponent)
-			elif choice < 70+10+10:
+			elif choice == "fireball"
 				#Create fireball scroll
 				itemComponent = classes.Item(useFunction = castFireball)
 				item = classes.Object(x, y, '?', "scroll of fireball", libtcod.light_yellow, item = itemComponent)
-			else:
+			elif choice == "confuse"
 				#Create confuse scroll
 				itemComponent = classes.Item(useFunction = castConfusion)
 				item = classes.Object(x, y, '?', "scroll of confusion", libtcod.light_yellow, item = itemComponent)
 			globs.objects.append(item)
 			item.sendToBack()
+
+#Choose option from list of chances & return its index
+def randomChoiceIndex(chances):
+	dice = libtcod.random_get_int(0, 1, sum(chances))
+
+	#Go through chances, keeping sum so far
+	sum = 0
+	choice = 0
+	for w in chances:
+		sum += w
+
+		#See if dice landed in part that corresponds to this choice
+		if dice <= sum:
+			return choice
+		choice += 1
+
+#Choose option from dictionary of chances, returning its key
+def randomChoice(chancesDict):
+	chances = chancesDict.values()
+	strings = chancesDict.keys()
+
+	return strings[randomChoiceIndex(chances)]
 
 #Gameplay functions
 #Find closest monster - find closest enemy up to max range and in player FOV
