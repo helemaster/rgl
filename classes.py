@@ -287,6 +287,10 @@ class Item:
 		self.owner.y = globs.player.y
 		globfun.message("You dropped a " + self.owner.name + ".", libtcod.yellow)
 
+		#If it's a piece of equipment, also dequip it
+		if self.owner.equipment:
+			self.owner.equipment.dequip()
+
 ###########################################################
 #Equipment - can be equipped & yields bonuses
 ###########################################################
@@ -304,6 +308,11 @@ class Equipment:
 
 	#Equip item and show a message about it
 	def equip(self):
+		#If slot is being used, dequip whatever is there first
+		oldEquipment = globfun.getEquippedInSlot(self.slot)
+		if oldEquipment is not None:
+			oldEquipment.dequip()
+
 		self.isEquipped = True
 		globfun.message("Equipped " + self.owner.name + " on " + self.slot + ".", libtcod.light_green)
 

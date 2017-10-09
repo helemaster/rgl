@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.3.1"   #major.minor.patch
+VERSION = "alpha 1.3.2"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -468,8 +468,6 @@ def checkLevelUp():
 		elif choice == 2:   #Defense
 			globs.player.fighter.defense += 1
 
-
-#Gameplay functions
 #Heal the player
 def castHeal():
 	if globs.player.fighter.hp == globs.player.fighter.maxHP:
@@ -691,7 +689,13 @@ def inventoryMenu(header):
 	if len(globs.inventory) == 0:
 		options = ["Inventory is empty."]
 	else:    #If item was chosen, return it
-		options = [item.name for item in globs.inventory]  #Populate with inventory items
+		options = []   #Populate with inventory items
+		for item in globs.inventory:
+			text = item.name
+			#Show additional info if it's equipped
+			if item.equipment and item.equipment.isEquipped:
+				text =text + " (on " + item.equipment.slot + ")"
+			options.append(text)
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -703,7 +707,7 @@ def inventoryMenu(header):
 def inventoryUseMenu(chosenItem):
 	options = ["Use", "Drop"]
 
-	if chosenItem.owner.equipment != None:   #It's a piece of equipment
+	if chosenItem.owner.equipment:   #It's a piece of equipment
 		options.append("Equip")
 		options.append("Dequip")
 
@@ -720,7 +724,7 @@ def inventoryUseMenu(chosenItem):
 	elif index == 1:  #Drop
 		chosenItem.drop()
 
-	if chosenItem.owner.equipment != None:
+	if chosenItem.owner.equipment:
 		if index == 2:  #Equip
 			chosenItem.owner.equipment.equip()
 		elif index == 3:  #Dequip

@@ -36,4 +36,11 @@ def message(newMsg, color = libtcod.white):
 		#Add new line as tuple w/ text and color
 		globs.gameMsgs.append( (line, color) )
 
+#Check equipment slots and return items in them
+def getEquippedInSlot(slot):
+	for obj in globs.inventory:
+		if obj.equipment and obj.equipment.slot == slot and obj.equipment.isEquipped:
+			return obj.equipment
+	return None
+
 
