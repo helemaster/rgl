@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.2.0"   #major.minor.patch
+VERSION = "alpha 1.3.0"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -38,8 +38,8 @@ TORCH_RADIUS = 10
 #Variables
 fovRecompute = True
 
-monsterChances = {"rat":60, "buck":10, "camper":20, "tree":10}
-itemChances = {"heal":70, "lightning":10, "fireball":10, "confuse":10}
+monsterChances = {"cockroach":60, "coyote":10, "hobo":20, "robot":10}
+itemChances = {"heal":70, "lightbulb":10, "match":10, "mace":10}
 
 ###########################################################
 #Functions
@@ -293,10 +293,10 @@ def placeObjects(room):
 
 	#Monster chances
 	monsterChances = {}
-	monsterChances["rat"] = 70  #Always spawns
-	monsterChances["tree"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
-	monsterChances["buck"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
-	monsterChances["camper"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["cockroach"] = 70  #Always spawns
+	monsterChances["robot"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["coyote"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["hobo"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
 
 
 
@@ -309,23 +309,26 @@ def placeObjects(room):
 		if not globfun.isBlocked(x, y):
 			#Determine type of monster & create it
 			choice = randomChoice(monsterChances)
-			if choice == "tree":
+			if choice == "robot":
 				#Create evil tree w/ fighter component, monster ai, & object
 				fighterComponent = classes.Fighter(hp = 30, defense = 3, power = 2, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
-				monster = classes.Object(x, y, 't', 'evil tree', libtcod.green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
-			elif choice == "rat":
+				monster = classes.Object(x, y, 'r', 'possessed machinery', libtcod.light_grey, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
+			
+			elif choice == "cockroach":
 				fighterComponent = classes.Fighter(hp = 10, defense = 1, power = 2, xp = 10, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
-				monster = classes.Object(x, y, 'r', 'rat', libtcod.light_pink, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
-			elif choice == "buck":
+				monster = classes.Object(x, y, 'c', 'cockroach', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
+			
+			elif choice == "coyote":
 				fighterComponent = classes.Fighter(hp = 30, defense = 5, power = 4, xp = 35, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
-				monster = classes.Object(x, y, 'd', 'buck', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
-			elif choice == "camper":
+			
+				monster = classes.Object(x, y, 'd', 'coyote', libtcod.light_orange, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
+			elif choice == "hobo":
 				fighterComponent = classes.Fighter(hp = 10, defense = 1, power = 4, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
-				monster = classes.Object(x, y, 'h', 'camper', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
+				monster = classes.Object(x, y, 'h', 'homeless man', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
 
 			#Add monster to object list
 			globs.objects.append(monster)
@@ -336,10 +339,14 @@ def placeObjects(room):
 
 	#Item chances
 	itemChances = {}
+	#Potions
 	itemChances["heal"] = 35  #Always spawns
-	itemChances["lightning"] = fromDungeonLevel([[25, 4]])
-	itemChances["fireball"] = fromDungeonLevel([[25, 6]])
-	itemChances["confuse"] = fromDungeonLevel([[10, 2]])
+	#"Magic"
+	itemChances["lightbulb"] = fromDungeonLevel([[25, 4]])
+	itemChances["match"] = fromDungeonLevel([[25, 6]])
+	itemChances["mace"] = fromDungeonLevel([[10, 2]])
+	#Equipment
+	itemChances["bat"] = 25 
 
 	for i in range(numItems):
 		#Pick random spot for item
@@ -352,19 +359,27 @@ def placeObjects(room):
 			if choice == "heal":
 				#Create healing potion
 				itemComponent = classes.Item(useFunction = castHeal)
-				item = classes.Object(x, y, '!', "healing potion", libtcod.light_red, item = itemComponent)
-			elif choice == "lightning":
+				item = classes.Object(x, y, '~', "bandage", libtcod.lightest_red, item = itemComponent)
+			
+			elif choice == "lightbulb":
 				#Create lightning bolt scroll
 				itemComponent = classes.Item(useFunction = castLightning)
-				item = classes.Object(x, y, '?', "scroll of lightning bolt", libtcod.light_yellow, item = itemComponent)
-			elif choice == "fireball":
+				item = classes.Object(x, y, '?', "strange lightbulb", libtcod.light_sky, item = itemComponent)
+			
+			elif choice == "match":
 				#Create fireball scroll
 				itemComponent = classes.Item(useFunction = castFireball)
-				item = classes.Object(x, y, '?', "scroll of fireball", libtcod.light_yellow, item = itemComponent)
-			elif choice == "confuse":
+				item = classes.Object(x, y, '!', "strange match", libtcod.light_orange, item = itemComponent)
+			
+			elif choice == "mace":
 				#Create confuse scroll
 				itemComponent = classes.Item(useFunction = castConfusion)
-				item = classes.Object(x, y, '?', "scroll of confusion", libtcod.light_yellow, item = itemComponent)
+				item = classes.Object(x, y, '!', "can of mace", libtcod.dark_green, item = itemComponent)
+			
+			elif choice == "bat":
+				#Create baseball bat
+				equipmentComponent = classes.Equipment(slot="right hand")
+				item = classes.Object(x, y, "/", "baseball bat", libtcod.light_sepia, equipment = equipmentComponent)
 			globs.objects.append(item)
 			item.sendToBack()
 
@@ -472,13 +487,13 @@ def castLightning():
 		return "cancelled"
 
 	#Attack enemy
-	globfun.message("A lightning bolt strikes the " + monster.name + " with a loud crack! The damage is " + str(LIGHTNING_DAMAGE) + " hit points.", libtcod.light_blue)
+	globfun.message("You throw the lightbulb and it strikes the " + monster.name + " with a loud electrical crack! The damage is " + str(LIGHTNING_DAMAGE) + " hit points.", libtcod.light_blue)
 	monster.fighter.takeDamage(LIGHTNING_DAMAGE)
 
 #Cast confusion spell
 def castConfusion():
 	#Ask player to select monster
-	globfun.message("Left-click an enemy to confuse it, or right-click to cancel.", libtcod.light_cyan)
+	globfun.message("Left-click an enemy to target it, or right-click to cancel.", libtcod.light_cyan)
 	monster = targetMonster(CONFUSE_RANGE)
 	if monster is None:
 		return 'cancelled'
@@ -487,17 +502,17 @@ def castConfusion():
 	oldAI = monster.ai
 	monster.ai = classes.ConfusedMonster(oldAI)
 	monster.ai.owner = monster  #Tell new component who owns it
-	globfun.message("The eyes of the " + monster.name + " look vacant, and it begins to stumble around!", libtcod.light_green)
+	globfun.message("The " + monster.name + " covers its streaming eyes and stumbles about!", libtcod.light_green)
 
 #Cast fireball spell
 def castFireball():
 	#Ask player for target tile to throw fireball at
-	globfun.message("Left-click a target tile for the fireball, or right-click to cancel.", libtcod.light_cyan)
+	globfun.message("Left-click a target tile for the match, or right-click to cancel.", libtcod.light_cyan)
 	(x, y) = targetTile()
 
 	if x is None:
 		return 'cancelled'
-	globfun.message("The fireball explodes, burning everthing within " + str(FIREBALL_RADIUS) + " tiles!", libtcod.orange)
+	globfun.message("The match ignites a fireball, which explodes and damages everything within " + str(FIREBALL_RADIUS) + " tiles!", libtcod.orange)
 
 	#Damage every fighter in range, including player
 	for object in globs.objects:
@@ -683,10 +698,13 @@ def inventoryMenu(header):
 	if index is None or len(globs.inventory) == 0: return None
 	return globs.inventory[index].item
 
-#*****FIGURE OUT HOW TO ERASE INVENTORY MENU FROM UNDERNEATH!!!****
 #Choose action to do with a selected item
 def inventoryUseMenu(chosenItem):
 	options = ["Use", "Drop"]
+
+	if chosenItem.owner.equipment != None:   #It's a piece of equipment
+		options.append("Equip")
+		options.append("Dequip")
 
 	#Fill bottom with blank options so inventory doesn't show through
 	spaces = len(globs.inventory) + 2
@@ -701,10 +719,17 @@ def inventoryUseMenu(chosenItem):
 	elif index == 1:  #Drop
 		chosenItem.drop()
 
+	if chosenItem.owner.equipment != None:
+		if index == 2:  #Equip
+			chosenItem.owner.equipment.equip()
+		elif index == 3:  #Dequip
+			chosenItem.owner.equipment.dequip()
+
+
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
 	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
-		"Kill self", "Get item"]
+		"Kill self", "Get item", "Show stairs", "Teleport to stairs"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -742,6 +767,14 @@ def dbgFunctions(choice):
 
 	elif choice == "Get item":
 		globfun.message("This function not implemented yet.", libtcod.red)
+
+	elif choice == "Show stairs":
+		globs.map[stairs.x][stairs.y].explored = True
+
+	elif choice == "Teleport to stairs":
+		globs.player.x = stairs.x
+		globs.player.y = stairs.y
+
 
 #Game state & initialization functions
 #Begin new game

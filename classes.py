@@ -45,7 +45,7 @@ con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 #Object - generic object, always represented by character
 ###########################################################
 class Object:
-	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None):
+	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None, equipment = None):
 		self.x = x
 		self.y = y
 		self.char = char
@@ -67,6 +67,11 @@ class Object:
 		if self.item:
 			self.item.owner = self
 
+		self.equipment = equipment
+		if self.equipment:
+			self.equipment.owner = self
+			self.item = Item()   #Auto make item component since equipment must be an item
+			self.item.owner = self
 
 	#Functions
 	#Move character by given amount
@@ -245,6 +250,7 @@ class ConfusedMonster:
 			#Restore previous AI
 			self.owner.ai = self.oldAI
 			globfun.message("The" + self.owner.name + " snaps out of confusion!", libtcod.orange) 
+
 ###########################################################
 #Item - can be picked up & used
 ###########################################################
@@ -278,6 +284,31 @@ class Item:
 		self.owner.y = globs.player.y
 		globfun.message("You dropped a " + self.owner.name + ".", libtcod.yellow)
 
+###########################################################
+#Equipment - can be equipped & yields bonuses
+###########################################################
+class Equipment:
+	def __init__(self, slot):
+		self.slot = slot
+		self.isEquipped = False
+
+	#Toggle quip/dequip status
+	def toggleEquip(self):
+		if self.isEquipped:
+			self.dequip()
+		else:
+			self.equip()
+
+	#Equip item and show a message about it
+	def equip(self):
+		self.isEquipped = True
+		globfun.message("Equipped " + self.owner.name + " on " + self.slot + ".", libtcod.light_green)
+
+	#Dequip equipment and display a message
+	def dequip(self):
+		if not self.isEquipped: return
+		self.isEquipped = False
+		globfun.message("Dequipped " + self.owner.name + " from " + self.slot + ".", libtcod.light_yellow)
 
 ###########################################################
 ###########################################################
