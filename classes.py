@@ -73,6 +73,9 @@ class Object:
 			self.item = Item()   #Auto make item component since equipment must be an item
 			self.item.owner = self
 
+	def __str__(self):
+		return self.name
+
 	#Functions
 	#Move character by given amount
 	def move(self, dx, dy):

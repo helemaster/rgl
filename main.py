@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.3.0"   #major.minor.patch
+VERSION = "alpha 1.3.1"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -380,6 +380,7 @@ def placeObjects(room):
 				#Create baseball bat
 				equipmentComponent = classes.Equipment(slot="right hand")
 				item = classes.Object(x, y, "/", "baseball bat", libtcod.light_sepia, equipment = equipmentComponent)
+
 			globs.objects.append(item)
 			item.sendToBack()
 
@@ -729,7 +730,7 @@ def inventoryUseMenu(chosenItem):
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
 	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
-		"Kill self", "Get item", "Show stairs", "Teleport to stairs"]
+		"Kill self", "Show stairs", "Teleport to stairs", "Get item"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -765,15 +766,58 @@ def dbgFunctions(choice):
 	elif choice == "Kill self":
 		globs.player.fighter.takeDamage(500)
 
-	elif choice == "Get item":
-		globfun.message("This function not implemented yet.", libtcod.red)
-
 	elif choice == "Show stairs":
 		globs.map[stairs.x][stairs.y].explored = True
 
 	elif choice == "Teleport to stairs":
 		globs.player.x = stairs.x
 		globs.player.y = stairs.y
+
+	elif choice == "Get item":
+		print("====Get Item Debug====")
+		print("Game items: ")
+		items = ["heal", "lightbulb", "match", "mace", "bat"]
+		for i in items:
+			print(i)
+
+		choice = input("Enter name of item: ")
+
+		if choice == "heal":
+			#Create healing potion
+			itemComponent = classes.Item(useFunction = castHeal)
+			item = classes.Object(globs.player.x + 1, globs.player.y + 1, '~', "bandage", libtcod.lightest_red, item = itemComponent)
+			print("Spawned.")
+		
+		elif choice == "lightbulb":
+			#Create lightning bolt scroll
+			itemComponent = classes.Item(useFunction = castLightning)
+			item = classes.Object(globs.player.x + 1, globs.player.y + 1, '?', "strange lightbulb", libtcod.light_sky, item = itemComponent)
+			print("Spawned.")
+
+		elif choice == "match":
+			#Create fireball scroll
+			itemComponent = classes.Item(useFunction = castFireball)
+			item = classes.Object(globs.player.x + 1, globs.player.y + 1, '!', "strange match", libtcod.light_orange, item = itemComponent)
+			print("Spawned.")
+
+		elif choice == "mace":
+			#Create confuse scroll
+			itemComponent = classes.Item(useFunction = castConfusion)
+			item = classes.Object(globs.player.x + 1, globs.player.y + 1, '!', "can of mace", libtcod.dark_green, item = itemComponent)
+			print("Spawned.")
+
+		elif choice == "bat":
+			#Create baseball bat
+			equipmentComponent = classes.Equipment(slot="right hand")
+			item = classes.Object(globs.player.x + 1, globs.player.y + 1, "/", "baseball bat", libtcod.light_sepia, equipment = equipmentComponent)
+			print("Spawned.")
+	
+		else:
+			print("This is not a valid item.")
+		globs.objects.append(item)
+
+		print("====End Get Item Debug====")
+
 
 
 #Game state & initialization functions
