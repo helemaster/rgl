@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.1.1"   #major.minor.patch
+VERSION = "alpha 1.2.0"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -21,12 +21,12 @@ LEVEL_SCREEN_WIDTH = 40
 CHARACTER_SCREEN_WIDTH = 30
 
 #Gameplay
-HEAL_AMOUNT = 10
-LIGHTNING_DAMAGE = 20
+HEAL_AMOUNT = 40
+LIGHTNING_DAMAGE = 40
 LIGHTNING_RANGE = 5
 CONFUSE_RANGE = 8
 FIREBALL_RADIUS = 3
-FIREBALL_DAMAGE = 12
+FIREBALL_DAMAGE = 25
 LEVEL_UP_BASE = 150
 LEVEL_UP_FACTOR = 150
 
@@ -35,15 +35,11 @@ FOV_ALGO = 0    #FOV algorithm to use
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
-#Population
-MAX_ROOM_MONSTERS = 3
-MAX_ROOM_ITEMS = 2
-
 #Variables
 fovRecompute = True
 
 monsterChances = {"rat":60, "buck":10, "camper":20, "tree":10}
-itemChances = ["heal":70, "lightning":10, "fireball":10, "confuse":10]
+itemChances = {"heal":70, "lightning":10, "fireball":10, "confuse":10}
 
 ###########################################################
 #Functions
@@ -256,7 +252,7 @@ def makeMap():
 			numRooms += 1
 
 	#Create stairs at center of last room
-	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white)
+	stairs = classes.Object(newX, newY, "<", "stairs", libtcod.white, alwaysVisible = True)
 	globs.objects.append(stairs)
 	stairs.sendToBack()   #So actors can walk on them
 
@@ -280,12 +276,29 @@ def createVTunnel(y1, y2, x):
 		globs.map[x][y].blocked = False
 		globs.map[x][y].blockSight = False
 
+#Returns value that depends on dungeon level - table specifies what value occurs after each level (for generating max items per room)
+def fromDungeonLevel(table):
+	for (value, level) in reversed(table): 
+		if dungeonLevel >= level:
+			return value
+	return 0
+
 
 #Object functions
 #Populate monsters
 def placeObjects(room):
-	#Choose random number of monsters
-	numMonsters = libtcod.random_get_int(0, 0, MAX_ROOM_MONSTERS)
+	#Choose random number of monsters & set maximum
+	maxMonsters = fromDungeonLevel([[2, 1], [3, 4], [5, 6]])
+	numMonsters = libtcod.random_get_int(0, 0, maxMonsters)
+
+	#Monster chances
+	monsterChances = {}
+	monsterChances["rat"] = 70  #Always spawns
+	monsterChances["tree"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["buck"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["camper"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+
+
 
 	for i in range(numMonsters):
 		#Choose random position for monster
@@ -298,19 +311,19 @@ def placeObjects(room):
 			choice = randomChoice(monsterChances)
 			if choice == "tree":
 				#Create evil tree w/ fighter component, monster ai, & object
-				fighterComponent = classes.Fighter(hp = 10, defense = 4, power = 2, xp = 25, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 30, defense = 3, power = 2, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 't', 'evil tree', libtcod.green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
 			elif choice == "rat":
-				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 2, xp = 10, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 10, defense = 1, power = 2, xp = 10, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'r', 'rat', libtcod.light_pink, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
-			elif choice == "buck"
-				fighterComponent = classes.Fighter(hp = 15, defense = 5, power = 4, xp = 35, deathFunction = monsterDeath)
+			elif choice == "buck":
+				fighterComponent = classes.Fighter(hp = 30, defense = 5, power = 4, xp = 35, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'd', 'buck', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
-			elif choice == "camper"
-				fighterComponent = classes.Fighter(hp = 5, defense = 1, power = 4, xp = 25, deathFunction = monsterDeath)
+			elif choice == "camper":
+				fighterComponent = classes.Fighter(hp = 10, defense = 1, power = 4, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'h', 'camper', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
 
@@ -318,7 +331,15 @@ def placeObjects(room):
 			globs.objects.append(monster)
 
 	#Populate items - choose random number of items
-	numItems = libtcod.random_get_int(0, 0, MAX_ROOM_ITEMS)
+	maxItems = fromDungeonLevel([[1, 1], [2, 4]])
+	numItems = libtcod.random_get_int(0, 0, maxItems)
+
+	#Item chances
+	itemChances = {}
+	itemChances["heal"] = 35  #Always spawns
+	itemChances["lightning"] = fromDungeonLevel([[25, 4]])
+	itemChances["fireball"] = fromDungeonLevel([[25, 6]])
+	itemChances["confuse"] = fromDungeonLevel([[10, 2]])
 
 	for i in range(numItems):
 		#Pick random spot for item
@@ -332,15 +353,15 @@ def placeObjects(room):
 				#Create healing potion
 				itemComponent = classes.Item(useFunction = castHeal)
 				item = classes.Object(x, y, '!', "healing potion", libtcod.light_red, item = itemComponent)
-			elif choice == "lightning"
+			elif choice == "lightning":
 				#Create lightning bolt scroll
 				itemComponent = classes.Item(useFunction = castLightning)
 				item = classes.Object(x, y, '?', "scroll of lightning bolt", libtcod.light_yellow, item = itemComponent)
-			elif choice == "fireball"
+			elif choice == "fireball":
 				#Create fireball scroll
 				itemComponent = classes.Item(useFunction = castFireball)
 				item = classes.Object(x, y, '?', "scroll of fireball", libtcod.light_yellow, item = itemComponent)
-			elif choice == "confuse"
+			elif choice == "confuse":
 				#Create confuse scroll
 				itemComponent = classes.Item(useFunction = castConfusion)
 				item = classes.Object(x, y, '?', "scroll of confusion", libtcod.light_yellow, item = itemComponent)
@@ -352,13 +373,13 @@ def randomChoiceIndex(chances):
 	dice = libtcod.random_get_int(0, 1, sum(chances))
 
 	#Go through chances, keeping sum so far
-	sum = 0
+	total = 0
 	choice = 0
 	for w in chances:
-		sum += w
+		total += w
 
 		#See if dice landed in part that corresponds to this choice
-		if dice <= sum:
+		if dice <= total:
 			return choice
 		choice += 1
 
@@ -728,12 +749,15 @@ def newGame():
 	global dungeonLevel
 
 	#Create player
-	fighterComponent = classes.Fighter(hp = 30, defense = 1, power = 5, xp = 0, deathFunction = playerDeath) #Create fighter component for player
+	fighterComponent = classes.Fighter(hp = 100, defense = 1, power = 4, xp = 0, deathFunction = playerDeath) #Create fighter component for player
 	globs.player = classes.Object(0, 0, '@', 'player', libtcod.white, blocks = True, fighter = fighterComponent)  #declare player object
 	globs.player.level = 1
 
 	#Set dungeon level
 	dungeonLevel = 1
+
+	#Clear inventory
+	globs.inventory = []
 
 	#Generate map
 	makeMap()
