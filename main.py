@@ -35,6 +35,21 @@ FOV_ALGO = 0    #FOV algorithm to use
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
+#Colors
+COLOR_DARK = [libtcod.dark_red, libtcod.dark_flame, libtcod.dark_orange, 
+			libtcod.dark_amber, libtcod.dark_yellow, libtcod.dark_lime, 
+			libtcod.dark_chartreuse, libtcod.dark_green, libtcod.dark_sea, 
+			libtcod.dark_turquoise, libtcod.dark_cyan, libtcod.dark_sky,
+			libtcod.dark_azure, libtcod.dark_blue, libtcod.dark_han, 
+			libtcod.dark_violet, libtcod.dark_purple, libtcod.dark_fuchsia, 
+			libtcod.dark_magenta, libtcod.dark_pink, libtcod.dark_crimson]
+COLOR_DARKEST = [libtcod.darkest_red, libtcod.darkest_flame, libtcod.darkest_orange, 
+			libtcod.darkest_amber, libtcod.darkest_yellow, libtcod.darkest_lime, 
+			libtcod.darkest_chartreuse, libtcod.darkest_green, libtcod.darkest_sea, 
+			libtcod.darkest_turquoise, libtcod.darkest_cyan, libtcod.darkest_sky,
+			libtcod.darkest_azure, libtcod.darkest_blue, libtcod.darkest_han, 
+			libtcod.darkest_violet, libtcod.darkest_purple, libtcod.darkest_fuchsia, 
+			libtcod.darkest_magenta, libtcod.darkest_pink, libtcod.darkest_crimson]
 #Variables
 fovRecompute = True
 
@@ -321,7 +336,7 @@ def placeObjects(room):
 				monster = classes.Object(x, y, 'c', 'cockroach', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
 			
 			elif choice == "coyote":
-				fighterComponent = classes.Fighter(hp = 30, defense = 5, power = 4, xp = 35, deathFunction = monsterDeath)
+				fighterComponent = classes.Fighter(hp = 30, defense = 4, power = 4, xp = 35, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 			
 				monster = classes.Object(x, y, 'd', 'coyote', libtcod.light_orange, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
@@ -345,8 +360,17 @@ def placeObjects(room):
 	itemChances["lightbulb"] = fromDungeonLevel([[25, 4]])
 	itemChances["match"] = fromDungeonLevel([[25, 6]])
 	itemChances["mace"] = fromDungeonLevel([[10, 2]])
+	
 	#Equipment
+	#Melee weapons
 	itemChances["bat"] = 25 
+	itemChances["pan"] = fromDungeonLevel([[10, 5]])
+	itemChances["hammer"] = fromDungeonLevel([[5, 6]])
+	itemChances["yoyo"] = fromDungeonLevel([[30, 3]])
+	#Shields
+	itemChances["potLid"] = fromDungeonLevel([[25, 4]])
+	itemChances["cutBoard"] = fromDungeonLevel([[10, 6]])
+	itemChances["trashLid"] = fromDungeonLevel([[10, 8]])
 
 	for i in range(numItems):
 		#Pick random spot for item
@@ -376,9 +400,10 @@ def placeObjects(room):
 				itemComponent = classes.Item(useFunction = castConfusion)
 				item = classes.Object(x, y, '!', "can of mace", libtcod.dark_green, item = itemComponent)
 			
+			#Equipment spawning
 			elif choice == "bat":
 				#Create baseball bat
-				equipmentComponent = classes.Equipment(slot="right hand")
+				equipmentComponent = classes.Equipment(slot="right hand", powerBonus = 1)
 				item = classes.Object(x, y, "/", "baseball bat", libtcod.light_sepia, equipment = equipmentComponent)
 
 			globs.objects.append(item)
@@ -456,17 +481,17 @@ def checkLevelUp():
 		choice = None
 		while choice == None:
 			choice = menu("Level up! Choose a stat to increase:\n",
-				["Constitution (+20 HP, from " + str(globs.player.fighter.maxHP) + ")",
-				"Strength (+1 attack, from " + str(globs.player.fighter.power) + ")",
-				"Defense (+1 defense, from " + str(globs.player.fighter.defense) + ")"], LEVEL_SCREEN_WIDTH)
+				["Constitution (+20 HP, from " + str(globs.player.fighter.baseHP) + ")",
+				"Strength (+1 attack, from " + str(globs.player.fighter.basePower) + ")",
+				"Defense (+1 defense, from " + str(globs.player.fighter.baseDefense) + ")"], LEVEL_SCREEN_WIDTH)
 
 		if choice == 0:  #HP
-			globs.player.fighter.maxHP += 20
+			globs.player.fighter.baseHP += 20
 			globs.player.fighter.hp += 20
 		elif choice == 1:  #Power
-			globs.player.fighter.power += 1
+			globs.player.fighter.basePower += 1
 		elif choice == 2:   #Defense
-			globs.player.fighter.defense += 1
+			globs.player.fighter.baseDefense += 1
 
 #Heal the player
 def castHeal():
@@ -520,9 +545,34 @@ def castFireball():
 			object.fighter.takeDamage(FIREBALL_DAMAGE)
 
 #Drawing/rendering functions
+
+#Pick a random symbol for walls
+def pickSymbol():
+	num = libtcod.random_get_int(0, 0, 3)
+	if num == 0:
+		wallSym = '#'
+	elif num == 1:
+		wallSym = 'o'
+	elif num == 2:
+		wallSym = '*'
+	elif num == 3:
+		wallSym = '^'
+
+	return wallSym
+
+#Pick random color for walls
+def pickColor():
+	num = libtcod.random_get_int(0, 0, len(COLOR_DARK) - 1)
+	return COLOR_DARK[num]
+
+def pickDarkColor():
+	num = libtcod.random_get_int(0, 0, len(COLOR_DARKEST) - 1)
+	return COLOR_DARKEST[num]
+
 #Draw all objects in list
 def renderAll():
 	global fovRecompute
+	global wallColorDrk, floorColorDrk, wallColor, floorColor, wallSym
 
 	#Recompute FOV if needed (change occurred)
 	if fovRecompute:
@@ -537,14 +587,14 @@ def renderAll():
 			if not visible:  #out of player FOV
 				if globs.map[x][y].explored:  #Tile can be visible to player only if explored
 					if wall:
-						libtcod.console_put_char_ex(classes.con, x, y, '#', classes.COLOR_DARK_WALL, libtcod.black)
+						libtcod.console_put_char_ex(classes.con, x, y, wallSym, wallColorDrk, libtcod.black)
 					else:
-						libtcod.console_put_char_ex(classes.con, x, y, '.', classes.COLOR_DARK_GROUND, libtcod.black)
+						libtcod.console_put_char_ex(classes.con, x, y, '.', floorColorDrk, libtcod.black)
 			else:   #Visible
 				if wall:
-					libtcod.console_put_char_ex(classes.con, x, y, '#', classes.COLOR_LIGHT_WALL, libtcod.black)
+					libtcod.console_put_char_ex(classes.con, x, y, wallSym, wallColor, libtcod.black)
 				else:
-					libtcod.console_put_char_ex(classes.con, x, y, '.', classes.COLOR_LIGHT_GROUND, libtcod.black)
+					libtcod.console_put_char_ex(classes.con, x, y, '.', floorColor, libtcod.black)
 				#Since it's visible, set to explored
 				globs.map[x][y].explored = True
 
@@ -825,12 +875,27 @@ def dbgFunctions(choice):
 
 
 #Game state & initialization functions
+
+#Pick environment of level
+def pickEnvironment():
+	global wallSym, wallColor, wallColorDrk, floorColor, floorColorDrk
+
+	#Pick random symbols and colors for the floor
+	wallSym = pickSymbol()
+	wallColor = pickColor()
+	wallColorDrk = pickDarkColor()
+	floorColor = pickColor()
+	floorColorDrk = pickDarkColor()
+
 #Begin new game
 def newGame():
 	global dungeonLevel
 
+	#Prepare environment
+	pickEnvironment()
+
 	#Create player
-	fighterComponent = classes.Fighter(hp = 100, defense = 1, power = 4, xp = 0, deathFunction = playerDeath) #Create fighter component for player
+	fighterComponent = classes.Fighter(hp = 100, defense = 1, power = 2, xp = 0, deathFunction = playerDeath) #Create fighter component for player
 	globs.player = classes.Object(0, 0, '@', 'player', libtcod.white, blocks = True, fighter = fighterComponent)  #declare player object
 	globs.player.level = 1
 
@@ -887,6 +952,7 @@ def loadGame():
 #Create new level when player goes down stairs
 def nextLevel():
 	global dungeonLevel
+	global wallSym, wallColor, wallColorDrk, floorColorDrk, wallColor, floorColor
 
 	print("next level")
 
@@ -894,6 +960,8 @@ def nextLevel():
 	globs.player.fighter.heal(globs.player.fighter.maxHP / 2)
 
 	globfun.message("You descend deeper...", libtcod.red)
+
+	pickEnvironment()
 
 	#Make new level
 	makeMap()

@@ -180,12 +180,31 @@ class Rect:
 ###########################################################
 class Fighter:
 	def __init__(self, hp, defense, power, xp, deathFunction = None):
+		self.baseHP = hp
 		self.maxHP = hp
 		self.hp = hp
+		self.baseDefense = defense
 		self.defense = defense
+		self.basePower = power
 		self.power = power
 		self.xp = xp
 		self.deathFunction = deathFunction
+
+	#Equipment modifiers
+	@property
+	def power(self):
+		bonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
+		return self.basePower + bonus
+
+	@property
+	def defense(self):
+		bonus = sum(equipment.defenseBonus for equipment in globfun.getAllEquipped(self.owner))
+		return self.baseDefense + bonus
+
+	@property
+	def maxHP(self):
+		bonus = sum(equipment.HPbonus for equipment in globfun.getAllEquipped(self.owner))
+		return self.baseHP + bonus
 
 	def takeDamage(self, damage):
 		#Apply damage, if possible
@@ -295,7 +314,7 @@ class Item:
 #Equipment - can be equipped & yields bonuses
 ###########################################################
 class Equipment:
-	def __init__(self, slot):
+	def __init__(self, slot, powerBonus = 0, defenseBonus = 0, hpBonus = 0):
 		self.slot = slot
 		self.isEquipped = False
 

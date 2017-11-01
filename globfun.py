@@ -43,4 +43,3 @@ def getEquippedInSlot(slot):
 			return obj.equipment
 	return None
 
-
