@@ -43,3 +43,14 @@ def getEquippedInSlot(slot):
 			return obj.equipment
 	return None
 
+#Get all equipped
+def getAllEquipped(obj):
+	if obj == globs.player:
+		equippedList = []
+		for item in globs.inventory:
+			if item.equipment and item.equipment.isEquipped:
+				equippedList.append(item.equipment)
+		return equippedList
+	else:
+		return []
+

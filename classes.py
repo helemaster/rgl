@@ -45,7 +45,7 @@ con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 #Object - generic object, always represented by character
 ###########################################################
 class Object:
-	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None, equipment = None):
+	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None, equipment = None, npcFunction = None):
 		self.x = x
 		self.y = y
 		self.char = char
@@ -72,6 +72,10 @@ class Object:
 			self.equipment.owner = self
 			self.item = Item()   #Auto make item component since equipment must be an item
 			self.item.owner = self
+
+		self.npcFunction = npcFunction
+		if self.npcFunction:
+			self.npcFunction.owner = self
 
 	def __str__(self):
 		return self.name
@@ -203,7 +207,7 @@ class Fighter:
 
 	@property
 	def maxHP(self):
-		bonus = sum(equipment.HPbonus for equipment in globfun.getAllEquipped(self.owner))
+		bonus = sum(equipment.hpBonus for equipment in globfun.getAllEquipped(self.owner))
 		return self.baseHP + bonus
 
 	def takeDamage(self, damage):
@@ -277,7 +281,8 @@ class ConfusedMonster:
 #Item - can be picked up & used
 ###########################################################
 class Item:
-	def __init__(self, useFunction = None):
+	def __init__(self, description = "", useFunction = None):
+		self.description = description
 		self.useFunction = useFunction  #What the item does
 
 	#Add to player's inventory and remove from map
@@ -286,7 +291,10 @@ class Item:
 			globfun.message("Your can't fit anything else into your bag.", libtcod.red)
 		else:
 			globs.inventory.append(self.owner)
-			globs.objects.remove(self.owner)
+			try:
+				globs.objects.remove(self.owner)
+			except:
+				print("ERR: Object not on floor.")
 			globfun.message("Aquired a " + self.owner.name + ".", libtcod.green)
 
 	#Use item - call its useFunction if defined
@@ -297,6 +305,10 @@ class Item:
 			if self.useFunction != "cancelled":
 				globs.inventory.remove(self.owner)  #Consume after use unless it was cancelled
 				self.useFunction()
+
+	#Inspect - view information about an item
+	def inspect(self):
+		globfun.message("You inspect the item: " + self.description, libtcod.yellow)
 
 	#Drop an item to the ground below player
 	def drop(self):
@@ -310,6 +322,10 @@ class Item:
 		if self.owner.equipment:
 			self.owner.equipment.dequip()
 
+	#Set a description for an item
+	def setDesc(self, desc):
+		self.description = desc
+
 ###########################################################
 #Equipment - can be equipped & yields bonuses
 ###########################################################
@@ -317,6 +333,9 @@ class Equipment:
 	def __init__(self, slot, powerBonus = 0, defenseBonus = 0, hpBonus = 0):
 		self.slot = slot
 		self.isEquipped = False
+		self.powerBonus = powerBonus
+		self.defenseBonus = defenseBonus
+		self.hpBonus = hpBonus
 
 	#Toggle quip/dequip status
 	def toggleEquip(self):
@@ -340,6 +359,16 @@ class Equipment:
 		if not self.isEquipped: return
 		self.isEquipped = False
 		globfun.message("Dequipped " + self.owner.name + " from " + self.slot + ".", libtcod.light_yellow)
+
+###########################################################
+#npcShopkeep component - NPC function that defines a shopkeeper
+###########################################################
+class npcShopkeep:
+	def __init__(self, stock):
+		self.stock = stock
+
+
+
 
 ###########################################################
 ###########################################################
