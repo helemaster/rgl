@@ -194,21 +194,24 @@ class Fighter:
 		self.xp = xp
 		self.deathFunction = deathFunction
 
-	#Equipment modifiers
-	@property
-	def power(self):
-		bonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
-		return self.basePower + bonus
+	# #Equipment modifiers
+	# @property
+	# def power(self):
+	# 	bonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
+	# 	print("power")
+	# 	return self.basePower + bonus
 
-	@property
-	def defense(self):
-		bonus = sum(equipment.defenseBonus for equipment in globfun.getAllEquipped(self.owner))
-		return self.baseDefense + bonus
+	# @property
+	# def defense(self):
+	# 	bonus = sum(equipment.defenseBonus for equipment in globfun.getAllEquipped(self.owner))
+	# 	print("def")
+	# 	return self.baseDefense + bonus
 
-	@property
-	def maxHP(self):
-		bonus = sum(equipment.hpBonus for equipment in globfun.getAllEquipped(self.owner))
-		return self.baseHP + bonus
+	# @property
+	# def maxHP(self):
+	# 	bonus = sum(equipment.hpBonus for equipment in globfun.getAllEquipped(self.owner))
+	# 	print("hp")
+	# 	return self.baseHP + bonus
 
 	def takeDamage(self, damage):
 		#Apply damage, if possible
@@ -228,7 +231,10 @@ class Fighter:
 		
 	def attack(self, target):
 		#Simple formula for attack damage
-		damage = self.power - target.fighter.defense
+
+		powBonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
+
+		damage = (self.power + powBonus) - target.fighter.defense
 
 		if damage > 0:
 			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " for " + str(damage) + " hit points.", libtcod.white)
@@ -355,6 +361,8 @@ class Equipment:
 		oldEquipment = globfun.getEquippedInSlot(self.slot)
 		if oldEquipment is not None:
 			oldEquipment.dequip()
+
+
 
 		self.isEquipped = True
 		globfun.message("Equipped " + self.owner.name + " on " + self.slot + ".", libtcod.light_green)

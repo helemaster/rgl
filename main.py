@@ -16,7 +16,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.4.2"   #major.minor.patch
+VERSION = "alpha 1.4.3"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -1268,6 +1268,7 @@ def playGame():
 	mouse = libtcod.Mouse()
 	key = libtcod.Key()
 
+	print(globs.player.fighter.power)
 
 	playerAction = None
 
