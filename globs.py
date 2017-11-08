@@ -24,5 +24,6 @@ player = ""  #Object that holds player
 panel = []  #GUI panel
 gameMsgs = []  #List of game messages - message and its color
 inventory = []  #Player inventory
+money = 0
 
 

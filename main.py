@@ -5,8 +5,6 @@
 #Version: Alpha
 ###########################################################
 
-#Money - item that increments stat when picked up
-
 #Item prefixes - sets?
 	#Lookup table
 	#Give it stats and look up the prefixes that correspond
@@ -18,7 +16,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.4.0"   #major.minor.patch
+VERSION = "alpha 1.4.2"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -68,7 +66,7 @@ itemChances = {"heal":70, "lightbulb":10, "match":10, "mace":10}
 
 #Input functions
 def handle_keys():
-	global key, stairs, window
+	global key, stairs, window, shopkeeper
 
 	#Fullscreen toggle
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
@@ -124,11 +122,15 @@ def handle_keys():
 				choice = debugMenu("DEBUG MENU\n")
 				dbgFunctions(choice)
 
-			#Walk down stairs
+			#Walk down stairs/interact
 			if keyChar == "x":
 				if stairs.x == globs.player.x and stairs.y == globs.player.y:
 					print("player is on stairs")
 					nextLevel()
+
+				if(shopkeeper.x - 1 == globs.player.x or shopkeeper.x + 1 == globs.player.x or 
+					shopkeeper.y - 1 == globs.player.y or shopkeeper.y + 1 == globs.player.y):
+					shop(shopkeeper)
 
 			#View character stats
 			if keyChar == "c":
@@ -308,6 +310,8 @@ def fromDungeonLevel(table):
 #Object functions
 #Populate monsters
 def placeObjects(room):
+	global shopkeeper
+
 	#Choose random number of monsters & set maximum
 	maxMonsters = fromDungeonLevel([[2, 1], [3, 4], [5, 6]])
 	numMonsters = libtcod.random_get_int(0, 0, maxMonsters)
@@ -318,6 +322,9 @@ def placeObjects(room):
 	monsterChances["robot"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
 	monsterChances["coyote"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
 	monsterChances["hobo"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+
+	#Shopkeeper NPC
+	monsterChances["shopkeep"] = 100
 
 
 
@@ -351,8 +358,25 @@ def placeObjects(room):
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'h', 'homeless man', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
 
+			elif choice == "shopkeep":
+				#Make sure there isn't already a shopkeeper
+				found = False
+				while i < len(globs.objects):
+					if globs.objects[i].name == "traveling salesman":
+						found = True
+						break
+					i += 1
+				if found == False:
+					stock = generateStock()
+					npcComponent = classes.Shopkeep(stock)
+					monster = classes.Object(x, y, '@', "traveling salesman", libtcod.lighter_green, blocks = False, npc = npcComponent)
+					shopkeeper = monster
+				else:
+					monster = None
+
 			#Add monster to object list
-			globs.objects.append(monster)
+			if monster is not None:
+				globs.objects.append(monster)
 
 	#Populate items - choose random number of items
 	maxItems = fromDungeonLevel([[1, 1], [2, 4]])
@@ -410,22 +434,22 @@ def getItems(choice, x, y):
 	
 	if choice == "heal":
 		#Create healing potion
-		itemComponent = classes.Item("A sterile bandage. Heal 40 hit points.", useFunction = castHeal)
+		itemComponent = classes.Item("A sterile bandage. Heal 40 hit points.", useFunction = castHeal, price = 10)
 		item = classes.Object(x, y, '~', "bandage", libtcod.lightest_red, item = itemComponent)
 	
 	elif choice == "lightbulb":
 		#Create lightning bolt scroll
-		itemComponent = classes.Item("It crackles with a strange energy. For use in combat.", useFunction = castLightning)
+		itemComponent = classes.Item("It crackles with a strange energy. For use in combat.", useFunction = castLightning, price = 30)
 		item = classes.Object(x, y, '?', "strange lightbulb", libtcod.light_sky, item = itemComponent)
 	
 	elif choice == "match":
 		#Create fireball scroll
-		itemComponent = classes.Item("It feels hot to the touch. For use in combat.", useFunction = castFireball)
+		itemComponent = classes.Item("It feels hot to the touch. For use in combat.", useFunction = castFireball, price = 30)
 		item = classes.Object(x, y, '!', "strange match", libtcod.light_orange, item = itemComponent)
 	
 	elif choice == "mace":
 		#Create confuse scroll
-		itemComponent = classes.Item("You don't want to spray this in your eyes. For use in combat.", useFunction = castConfusion)
+		itemComponent = classes.Item("You don't want to spray this in your eyes. For use in combat.", useFunction = castConfusion, price = 30)
 		item = classes.Object(x, y, '!', "can of mace", libtcod.dark_green, item = itemComponent)
 	
 	#Equipment spawning
@@ -434,116 +458,155 @@ def getItems(choice, x, y):
 		equipmentComponent = classes.Equipment(slot = "right hand", powerBonus = 1)
 		item = classes.Object(x, y, "/", "baseball bat", libtcod.light_sepia, equipment = equipmentComponent)
 		item.item.setDesc("A sturdy wood bat. +1 power.")
+		item.item.setPrice(50)
 
 	elif choice == "pan":
 		#Create frying pan
 		equipmentComponent = classes.Equipment(slot = "right hand", powerBonus = 3)
 		item = classes.Object(x, y, "9", "frying pan", libtcod.dark_azure, equipment = equipmentComponent)
 		item.item.setDesc("A metal frying pan. +3 power.")
+		item.item.setPrice(75)
 
 	elif choice == "hammer":
 		equipmentComponent = classes.Equipment(slot = "right hand", powerBonus = 6)
 		item = classes.Object(x, y, "T", "hammer", libtcod.light_blue, equipment = equipmentComponent)
 		item.item.setDesc("A hefty hammer. +6 power.")
+		item.item.setPrice(500)
 
 	elif choice == "yoyo":
 		equipmentComponent = classes.Equipment(slot = "right hand", powerBonus = 2, defenseBonus = 1)
 		item = classes.Object(x, y, "s", "yo-yo", libtcod.orange, equipment = equipmentComponent)
 		item.item.setDesc("A plastic yo-yo. It swings easily. +2 power; +1 defense.")
+		item.item.setPrice(120)
 
 	elif choice == "potLid":
 		equipmentComponent = classes.Equipment(slot = "left hand", defenseBonus = 1)
 		item = classes.Object(x, y, ")", "pot lid", libtcod.light_han, equipment = equipmentComponent)
 		item.item.setDesc("The metal lid to some cooking pot. +1 defense.")
+		item.item.setPrice(50)
 
 	elif choice == "cutBoard":
 		equipmentComponent = classes.Equipment(slot = "left hand", defenseBonus = 2)
 		item = classes.Object(x, y, "]", "cutting board", libtcod.light_orange, equipment = equipmentComponent)
 		item.item.setDesc("A solid wooden cutting board. +1 defense.")
+		item.item.setPrice(80)
 
 	elif choice == "trashLid":
 		equipmentComponent = classes.Equipment(slot = "left hand", defenseBonus = 3)
 		item = classes.Object(x, y, "]", "trashcan lid", libtcod.lighter_azure, equipment = equipmentComponent)
 		item.item.setDesc("The lid from a trashcan. +3 defense")
+		item.item.setPrice(120)
 
 	elif choice == "t-shirt":
 		equipmentComponent = classes.Equipment(slot = "body", hpBonus = 5)
 		item = classes.Object(x, y, "H", "T-shirt", libtcod.violet, equipment = equipmentComponent)
 		item.item.setDesc("A plain purple T-shirt. +5 max HP")
+		item.item.setPrice(60)
 
 	elif choice == "polo":
 		equipmentComponent = classes.Equipment(slot = "body", hpBonus = 10)
 		item = classes.Object(x, y, "H", "polo shirt", libtcod.lighter_green, equipment = equipmentComponent)
 		item.item.setDesc("A green polo. Casual, but professional. +10 max HP.")
+		item.item.setPrice(85)
 
 	elif choice == "hoodie":
 		equipmentComponent = classes.Equipment(slot = "body", hpBonus = 20)
 		item = classes.Object(x, y, "H", "hoodie", libtcod.amber, equipment = equipmentComponent)
 		item.item.setDesc("An orange hoodie. It's comfy! +20 max HP.")
+		item.item.setPrice(105)
 
 	elif choice == "paperHat":
 		equipmentComponent = classes.Equipment(slot = "head", hpBonus = 1)
 		item = classes.Object(x, y, "^", "newspaper hat", libtcod.lightest_grey, equipment = equipmentComponent)
 		item.item.setDesc("A newspaper hat. It's flimsy and will probably fall apart if it gets wet, but it'll do. +1 max HP.")
+		item.item.setPrice(10)
 
 	elif choice == "cap":
 		equipmentComponent = classes.Equipment(slot = "head", hpBonus = 5)
 		item = classes.Object(x, y, "d", "baseball cap", libtcod.light_yellow, equipment = equipmentComponent)
 		item.item.setDesc("A yellow baseball cap. +5 max HP.")
+		item.item.setPrice(50)
 
 	elif choice == "backCap":
 		equipmentComponent = classes.Equipment(slot = "head", hpBonus = 10, defenseBonus = 1)
 		item = classes.Object(x, y, "q", "backwards baseball cap", libtcod.dark_red, equipment = equipmentComponent)
 		item.item.setDesc("A red backwards baseball cap. Has extra cool factor! +10 max HP; +1 defense.")
+		item.item.setPrice(75)
 
 	elif choice == "sandals":
 		equipmentComponent = classes.Equipment(slot = "feet", hpBonus = 1, defenseBonus = 1)
 		item = classes.Object(x, y, "b", "sandals", libtcod.brass, equipment = equipmentComponent)
 		item.item.setDesc("A pair of sandals. They don't provide much protection, but it beats barefoot. +1 max HP; +1 defense.")
+		item.item.setPrice(45)
 
 	elif choice == "sneakers":
 		equipmentComponent = classes.Equipment(slot = "feet", hpBonus = 5, defenseBonus = 1)
 		item = classes.Object(x, y, "B", "sneakers", libtcod.light_magenta, equipment = equipmentComponent)
 		item.item.setDesc("A pair of flashy sneakers. +5 max HP; +1 defense.")
+		item.item.setPrice(55)
 
 	elif choice == "boots":
 		equipmentComponent = classes.Equipment(slot = "feet", hpBonus = 10, defense = 2)
 		item = classes.Object(x, y, "B", "boots", libtcod.copper, equipment = equipmentComponent)
 		item.item.setDesc("A set of sturdy boots. +10 max HP; +2 defense.")
+		item.item.setPrice(100)
 
 	globs.objects.append(item)
 	item.sendToBack()
 	return item
 
 #Generate list of items - generate stock for shopkeep
-def generateItems():
+def generateStock():
 	global dungeonLevel
 
-	#Item chances
+	stock = []
+
+	#Item chances - what shopkeep will stock
 	itemChances = {}
+
 	#Potions
-	itemChances["heal"] = 35  #Always spawns
+	itemChances["heal"] = 30  #Always spawns
 	#"Magic"
 	itemChances["lightbulb"] = fromDungeonLevel([[25, 4]])
 	itemChances["match"] = fromDungeonLevel([[25, 6]])
 	itemChances["mace"] = fromDungeonLevel([[10, 2]])
 	
 	#Equipment
-	#Melee weapons
+	#Melee weapon
 	itemChances["bat"] = 25 
 	itemChances["pan"] = fromDungeonLevel([[10, 5]])
+
 	itemChances["hammer"] = fromDungeonLevel([[5, 6]])
 	itemChances["yoyo"] = fromDungeonLevel([[30, 3]])
+
 	#Shields
 	itemChances["potLid"] = fromDungeonLevel([[25, 4]])
+
 	itemChances["cutBoard"] = fromDungeonLevel([[10, 6]])
 	itemChances["trashLid"] = fromDungeonLevel([[10, 8]])
+	#Body armor
+	itemChances["t-shirt"] = fromDungeonLevel([[10, 2]])
+	itemChances["polo"] = fromDungeonLevel([[10, 6]])
+	itemChances["hoodie"] = fromDungeonLevel([[5, 4]])
+	#Hats
+	itemChances["paperHat"] = fromDungeonLevel([[15, 2]])
+	itemChances["cap"] = fromDungeonLevel([[10, 4]])
+	itemChances["backCap"] = fromDungeonLevel([[5, 6]])
+	#Shoes
+	itemChances["sandals"] = fromDungeonLevel([[15, 2]])
+	itemChances["sneakers"] = fromDungeonLevel([[10, 4]])
+	itemChances["boots"] = fromDungeonLevel([[5, 6]])
+
 
 	numItems = dungeonLevel + 3
 
 	for i in range(numItems):
 		choice = randomChoice(itemChances)
 
+		item = getItems(choice, 0, 0)
+		stock.append(item)
+
+	return stock
 
 
 #Choose option from list of chances & return its index
@@ -604,6 +667,11 @@ def monsterDeath(monster):
 	monster.ai = None
 	monster.name = 'remains of ' + monster.name
 	monster.sendToBack()
+	
+	#Give player money
+	amount = libtcod.random_get_int(0, 1, 10)
+	globs.money += amount
+	globfun.message("The " + monster.name.capitalize() + " drops $" + str(amount) + ".", libtcod.orange)
 
 #Check leveling of player
 def checkLevelUp():
@@ -680,6 +748,84 @@ def castFireball():
 		if object.distance(x, y) <= FIREBALL_RADIUS and object.fighter:
 			globfun.message("The " + object.name + " gets burned for " + str(FIREBALL_DAMAGE) + " hit points.", libtcod.orange)
 			object.fighter.takeDamage(FIREBALL_DAMAGE)
+
+#Shopping functions
+
+def shop(shopkeeper):
+	#ASk player what they want to do
+	globfun.message('Traveling Salesman says, "Safe travels."', libtcod.light_green)
+	shopUseMenu()
+
+def shopBuy(item):
+	#Check if player has enough money to purchase
+	if item is not None:
+		if globs.money >= item.item.price:
+			#Decrement gold and add item to player inventory
+			if len(globs.inventory) < 26:
+				item.item.pickUp()
+				globs.money -= item.item.price
+			else:
+				globfun.message("Inventory is too full to purchase item!", libtcod.light_red)
+
+		else:
+			globfun.message("Insufficient funds for this item.", libtcod.light_red)
+
+def shopSell():
+
+	if len(globs.inventory) == 0:
+		options = ["Nothing to sell."]
+	else:    #If item was chosen, return it
+		options = []   #Populate with inventory items
+		for item in globs.inventory:
+			text = "$" + str(item.item.price) + ": " + item.name
+			#Show additional info if it's equipped
+			if item.equipment and item.equipment.isEquipped:
+				text =text + " (on " + item.equipment.slot + ")"
+			options.append(text)
+
+	index = menu("Choose an item to sell.", options, INVENTORY_WIDTH)
+
+	#If item was chosen, return it
+	if index is None or len(globs.inventory) == 0: return None
+	item = globs.inventory[index]
+
+	if item is not None:
+		#Make sure item isn't equipped
+		if item.equipment and item.equipment.isEquipped:
+			globfun.message("You must remove this item before it can be sold.", libtcod.light_red)
+		else:
+			#Remove item from player inventory & give them money
+			globs.inventory.remove(item)
+			globs.money += item.item.price
+			globfun.message("Sold " + item.name + " and acquired $" + str(item.item.price) + ".", libtcod.light_green)
+
+def shopUseMenu():
+	#Ask what player wants to do
+	options = ["Buy", "Sell"]
+	
+	index = menu("What do you want to do?", options, INVENTORY_WIDTH)
+
+	if index == 0:   #Buy
+		item = shopMenu(shopkeeper)
+		shopBuy(item)
+	elif index == 1:   #Sell
+		item = shopSell()
+
+#shopMenu - view contents of shopkeeper's stock
+def shopMenu(shopkeeper):
+	options = []
+
+	for item in shopkeeper.npc.stock:
+		text = "$" + str(item.item.price) + ": " + item.name
+		options.append(text)
+
+	index = menu("Shop", options, INVENTORY_WIDTH)
+
+	#Return chosen item
+	if index is None:
+		return None
+	else:
+		return shopkeeper.npc.stock[index]
 
 #Drawing/rendering functions
 
@@ -762,6 +908,9 @@ def renderAll():
 
 	#Display dungeon level:
 	libtcod.console_print_ex(globs.panel, 1, 3, libtcod.BKGND_NONE, libtcod.LEFT, "Floor: " + str(dungeonLevel))
+
+	#Display money
+	libtcod.console_print_ex(globs.panel, 1, 5, libtcod.BKGND_NONE, libtcod.LEFT, "Money: $" + str(globs.money))
 
 	#Display names of objects under mouse
 	libtcod.console_set_default_foreground(globs.panel, libtcod.light_gray)
@@ -923,7 +1072,7 @@ def inventoryUseMenu(chosenItem):
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
 	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
-		"Kill self", "Show stairs", "Teleport to stairs", "Get item"]
+		"Kill self", "Show stairs", "Teleport to stairs", "Get item", "Show shopkeeper", "Teleport to shopkeeper"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -933,6 +1082,8 @@ def debugMenu(header):
 
 #Debugging functions
 def dbgFunctions(choice): 
+	global shopkeeper
+
 	if choice == "Godmode":
 		globs.player.fighter.hp = -9999
 		globs.player.fighter.power = 9999
@@ -990,6 +1141,13 @@ def dbgFunctions(choice):
 			print("Inventory is too full to spawn item.")
 
 		print("===End Item Debug===")
+
+	elif choice == "Show shopkeeper":
+		globs.map[shopkeeper.x][shopkeeper.y].explored = True
+
+	elif choice == "Teleport to shopkeeper":
+		globs.player.x = shopkeeper.x
+		globs.player.y = shopkeeper.y
 
 
 
@@ -1049,6 +1207,7 @@ def saveGame():
 	file ["gameState"] = globs.gameState
 	file["stairsIndex"] = globs.objects.index(stairs)
 	file["dungeonLevel"] = dungeonLevel
+	file["money"] = globs.money
 	file.close()
 
 #Load a saved shelve
@@ -1064,6 +1223,7 @@ def loadGame():
 	globs.gameState = file["gameState"]
 	stairs = globs.objects[file["stairsIndex"]]
 	dungeonLevel = file["dungeonLevel"] 
+	globs.money = file["money"]
 	file.close()
 
 	initFOV()

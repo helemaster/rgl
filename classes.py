@@ -45,7 +45,7 @@ con = libtcod.console_new(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT)
 #Object - generic object, always represented by character
 ###########################################################
 class Object:
-	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None, equipment = None, npcFunction = None):
+	def __init__(self, x, y, char, name, color, blocks = False, alwaysVisible = False, fighter = None, ai = None, item = None, equipment = None, npc = None):
 		self.x = x
 		self.y = y
 		self.char = char
@@ -73,9 +73,9 @@ class Object:
 			self.item = Item()   #Auto make item component since equipment must be an item
 			self.item.owner = self
 
-		self.npcFunction = npcFunction
-		if self.npcFunction:
-			self.npcFunction.owner = self
+		self.npc = npc
+		if self.npc:
+			self.npc.owner = self
 
 	def __str__(self):
 		return self.name
@@ -281,9 +281,10 @@ class ConfusedMonster:
 #Item - can be picked up & used
 ###########################################################
 class Item:
-	def __init__(self, description = "", useFunction = None):
+	def __init__(self, description = "", useFunction = None, price = 0):
 		self.description = description
 		self.useFunction = useFunction  #What the item does
+		self.price = price
 
 	#Add to player's inventory and remove from map
 	def pickUp(self):
@@ -295,7 +296,7 @@ class Item:
 				globs.objects.remove(self.owner)
 			except:
 				print("ERR: Object not on floor.")
-			globfun.message("Aquired a " + self.owner.name + ".", libtcod.green)
+			globfun.message("Acquired a " + self.owner.name + ".", libtcod.green)
 
 	#Use item - call its useFunction if defined
 	def use(self):
@@ -325,6 +326,10 @@ class Item:
 	#Set a description for an item
 	def setDesc(self, desc):
 		self.description = desc
+
+	#Set price of an item
+	def setPrice(self, price):
+		self.price = price
 
 ###########################################################
 #Equipment - can be equipped & yields bonuses
@@ -363,12 +368,12 @@ class Equipment:
 ###########################################################
 #npcShopkeep component - NPC function that defines a shopkeeper
 ###########################################################
-class npcShopkeep:
+class Shopkeep:
 	def __init__(self, stock):
 		self.stock = stock
 
-
-
+	def hello(self):
+		globfun.message(self.owner.name + " says hello.", libtcod.light_green)
 
 ###########################################################
 ###########################################################
