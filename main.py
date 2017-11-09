@@ -5,10 +5,6 @@
 #Version: Alpha
 ###########################################################
 
-#Item prefixes - sets?
-	#Lookup table
-	#Give it stats and look up the prefixes that correspond
-
 import libtcodpy as libtcod
 import classes   #Classes
 import globs     #Global variables & constants
