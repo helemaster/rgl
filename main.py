@@ -2,7 +2,7 @@
 #main.py
 #Base module to run game
 #Holly LeMaster, 2017
-#Version: Alpha
+#Version: Beta
 ###########################################################
 
 import libtcodpy as libtcod
@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "alpha 1.4.3"   #major.minor.patch
+VERSION = "beta 1.0.0"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
