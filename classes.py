@@ -233,8 +233,9 @@ class Fighter:
 		#Simple formula for attack damage
 
 		powBonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
+		defBonus = sum(equipment.defenseBonus for equipment in globfun.getAllEquipped(self.owner))
 
-		damage = (self.power + powBonus) - target.fighter.defense
+		damage = (self.power + powBonus) - (target.fighter.defense + defBonus)
 
 		if damage > 0:
 			globfun.message(self.owner.name.capitalize() + " attacks " + target.name + " for " + str(damage) + " hit points.", libtcod.white)
@@ -361,8 +362,6 @@ class Equipment:
 		oldEquipment = globfun.getEquippedInSlot(self.slot)
 		if oldEquipment is not None:
 			oldEquipment.dequip()
-
-
 
 		self.isEquipped = True
 		globfun.message("Equipped " + self.owner.name + " on " + self.slot + ".", libtcod.light_green)

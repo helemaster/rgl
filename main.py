@@ -57,9 +57,6 @@ COLOR_DARKEST = [libtcod.darkest_red, libtcod.darkest_flame, libtcod.darkest_ora
 #Variables
 fovRecompute = True
 
-monsterChances = {"cockroach":60, "coyote":10, "hobo":20, "robot":10}
-itemChances = {"heal":70, "lightbulb":10, "match":10, "mace":10}
-
 ###########################################################
 #Functions
 ###########################################################
@@ -128,6 +125,8 @@ def handle_keys():
 					print("player is on stairs")
 					nextLevel()
 
+			#Talk to an NPC
+			if keyChar == "t":  
 				if(shopkeeper.x - 1 == globs.player.x or shopkeeper.x + 1 == globs.player.x or 
 					shopkeeper.y - 1 == globs.player.y or shopkeeper.y + 1 == globs.player.y):
 					shop(shopkeeper)
@@ -1000,9 +999,10 @@ def mainMenu():
 		libtcod.image_blit_2x(img, 0, 0, 0)
 
 		libtcod.console_set_default_foreground(0, libtcod.white)
-		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 20, libtcod.BKGND_NONE, libtcod.CENTER, "MODERNIZED ROGUELIKE")
+		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 20, libtcod.BKGND_NONE, libtcod.CENTER, "MRGL: An ASCII Roguelike")
 		libtcod.console_print_ex(0, globs.SCREEN_WIDTH / 2, 22, libtcod.BKGND_NONE, libtcod.CENTER, "Programming & Design: Holly LeMaster, 2017")
 		libtcod.console_print_ex(0, 1, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.LEFT, VERSION)
+		libtcod.console_print_ex(0, globs.SCREEN_WIDTH - 2, globs.SCREEN_HEIGHT - 2, libtcod.BKGND_NONE, libtcod.RIGHT, "See HELP.pdf for how to play.")
 		#Show options and wait for player choice
 		choice = menu("", ["New Game", "Continue", "Quit"], 24)
 
@@ -1014,9 +1014,10 @@ def mainMenu():
 				continue
 			playGame()
 
-		if choice == 0: #New game
+		elif choice == 0: #New game
 			newGame()
 			playGame()
+
 		elif choice == 2:  #Quit
 			break
 
@@ -1072,7 +1073,7 @@ def inventoryUseMenu(chosenItem):
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
 	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
-		"Kill self", "Show stairs", "Teleport to stairs", "Get item", "Show shopkeeper", "Teleport to shopkeeper"]
+		"Kill self", "Show stairs", "Teleport to stairs", "Get item", "Teleport to shopkeeper"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
 
@@ -1141,9 +1142,6 @@ def dbgFunctions(choice):
 			print("Inventory is too full to spawn item.")
 
 		print("===End Item Debug===")
-
-	elif choice == "Show shopkeeper":
-		globs.map[shopkeeper.x][shopkeeper.y].explored = True
 
 	elif choice == "Teleport to shopkeeper":
 		globs.player.x = shopkeeper.x
