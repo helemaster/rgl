@@ -12,7 +12,7 @@ import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Constants
-VERSION = "beta 1.0.0"   #major.minor.patch
+VERSION = "beta 1.0.1"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -57,8 +57,11 @@ fovRecompute = True
 #Functions
 ###########################################################
 
+###########################################################
 #Input functions
-def handle_keys():
+###########################################################
+#handleKeys - read player input
+def handleKeys():
 	global key, stairs, window, shopkeeper
 
 	#Fullscreen toggle
@@ -208,7 +211,9 @@ def playerMoveOrAttack(dx, dy):
 		globs.player.move(dx, dy)
 		fovRecompute = True
 
+###########################################################
 #Map functions
+###########################################################
 #Generate 2D map list
 def makeMap():
 	global stairs
@@ -301,8 +306,9 @@ def fromDungeonLevel(table):
 			return value
 	return 0
 
-
-#Object functions
+###########################################################
+#Object and gameplay functions
+###########################################################
 #Populate monsters
 def placeObjects(room):
 	global shopkeeper
@@ -319,7 +325,7 @@ def placeObjects(room):
 	monsterChances["hobo"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
 
 	#Shopkeeper NPC
-	monsterChances["shopkeep"] = 100
+	monsterChances["shopkeep"] = 50
 
 
 
@@ -626,7 +632,6 @@ def randomChoice(chancesDict):
 
 	return strings[randomChoiceIndex(chances)]
 
-#Gameplay functions
 #Find closest monster - find closest enemy up to max range and in player FOV
 def closestMonster(maxRange):
 	closestEnemy = None
@@ -656,17 +661,19 @@ def playerDeath(player):
 #Kill monster, change character, modify attributes
 def monsterDeath(monster):
 	globfun.message(monster.name.capitalize() + " is dead! You gain " + str(monster.fighter.xp) + " experience points.", libtcod.orange)
+	
+	#Give player money
+	amount = libtcod.random_get_int(0, 1, 10)
+	globs.money += amount
+	globfun.message("The " + monster.name.capitalize() + " drops $" + str(amount) + ".", libtcod.orange)
+
+	#CHange monster to corpse
 	monster.color = libtcod.dark_red
 	monster.blocks = False
 	monster.fighter = None
 	monster.ai = None
 	monster.name = 'remains of ' + monster.name
 	monster.sendToBack()
-	
-	#Give player money
-	amount = libtcod.random_get_int(0, 1, 10)
-	globs.money += amount
-	globfun.message("The " + monster.name.capitalize() + " drops $" + str(amount) + ".", libtcod.orange)
 
 #Check leveling of player
 def checkLevelUp():
@@ -745,7 +752,6 @@ def castFireball():
 			object.fighter.takeDamage(FIREBALL_DAMAGE)
 
 #Shopping functions
-
 def shop(shopkeeper):
 	#ASk player what they want to do
 	globfun.message('Traveling Salesman says, "Safe travels."', libtcod.light_green)
@@ -794,36 +800,9 @@ def shopSell():
 			globs.money += item.item.price
 			globfun.message("Sold " + item.name + " and acquired $" + str(item.item.price) + ".", libtcod.light_green)
 
-def shopUseMenu():
-	#Ask what player wants to do
-	options = ["Buy", "Sell"]
-	
-	index = menu("What do you want to do?", options, INVENTORY_WIDTH)
-
-	if index == 0:   #Buy
-		item = shopMenu(shopkeeper)
-		shopBuy(item)
-	elif index == 1:   #Sell
-		item = shopSell()
-
-#shopMenu - view contents of shopkeeper's stock
-def shopMenu(shopkeeper):
-	options = []
-
-	for item in shopkeeper.npc.stock:
-		text = "$" + str(item.item.price) + ": " + item.name
-		options.append(text)
-
-	index = menu("Shop", options, INVENTORY_WIDTH)
-
-	#Return chosen item
-	if index is None:
-		return None
-	else:
-		return shopkeeper.npc.stock[index]
-
+###########################################################
 #Drawing/rendering functions
-
+###########################################################
 #Pick a random symbol for walls
 def pickSymbol():
 	num = libtcod.random_get_int(0, 0, 3)
@@ -932,7 +911,9 @@ def renderBar(x, y, totalWidth, name, value, max, barColor, backColor):
 	libtcod.console_set_default_foreground(globs.panel, libtcod.white)
 	libtcod.console_print_ex(globs.panel, x + totalWidth / 2, y, libtcod.BKGND_NONE, libtcod.CENTER, name + ": " + str(value) + "/" + str(max))
 
+###########################################################
 #Menu functions
+###########################################################
 #Generic menu function
 def menu(header, options, width):
 	global window
@@ -1065,6 +1046,35 @@ def inventoryUseMenu(chosenItem):
 		elif index == 4:  #Dequip
 			chosenItem.owner.equipment.dequip()
 
+#Shopkeeper menus
+def shopUseMenu():
+	#Ask what player wants to do
+	options = ["Buy", "Sell"]
+	
+	index = menu("What do you want to do?", options, INVENTORY_WIDTH)
+
+	if index == 0:   #Buy
+		item = shopMenu(shopkeeper)
+		shopBuy(item)
+	elif index == 1:   #Sell
+		item = shopSell()
+
+#shopMenu - view contents of shopkeeper's stock
+def shopMenu(shopkeeper):
+	options = []
+
+	for item in shopkeeper.npc.stock:
+		text = "$" + str(item.item.price) + ": " + item.name
+		options.append(text)
+
+	index = menu("Shop", options, INVENTORY_WIDTH)
+
+	#Return chosen item
+	if index is None:
+		return None
+	else:
+		return shopkeeper.npc.stock[index]
+
 
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
@@ -1144,9 +1154,9 @@ def dbgFunctions(choice):
 		globs.player.y = shopkeeper.y
 
 
-
+###########################################################
 #Game state & initialization functions
-
+###########################################################
 #Pick environment of level
 def pickEnvironment():
 	global wallSym, wallColor, wallColorDrk, floorColor, floorColorDrk
@@ -1185,8 +1195,9 @@ def newGame():
 	#Set state to playing
 	globs.gameState = 'playing'
 
-	#Print welcoming message
-	globfun.message("Welcome, stranger! Prepare to perish!", libtcod.lighter_green)
+	#Print welcoming message and clear previous messages
+	globs.gameMsgs = []
+	globfun.message("You awaken in a dilapidated factory with no idea how you've arrived. You hear the scuttling of many mysterious creatures around you. You are bare except for a pair of dirty jeans. Escape or perish!", libtcod.lighter_green)
 
 #Save a game to a shelve to write game data
 def saveGame():
@@ -1285,7 +1296,7 @@ def playGame():
 
 
 		#Key handling
-		globs.playerAction = handle_keys()
+		globs.playerAction = handleKeys()
 		if globs.playerAction == 'exit':
 			saveGame()  #Auto-save when quitting
 			break
@@ -1304,7 +1315,7 @@ def playGame():
 libtcod.console_set_custom_font('arial10x10.png', libtcod.FONT_TYPE_GREYSCALE | libtcod.FONT_LAYOUT_TCOD)
 
 #Initialize window
-libtcod.console_init_root(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 'mrgl [ALPHA]', False)
+libtcod.console_init_root(globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 'mrgl [BETA]', False)
 
 #Initialize GUI panel
 globs.panel = libtcod.console_new(globs.SCREEN_WIDTH, globs.PANEL_HEIGHT)
