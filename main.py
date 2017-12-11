@@ -2,7 +2,7 @@
 #main.py
 #Base module to run game
 #Holly LeMaster, 2017
-#Version: Beta
+#Version: Final
 ###########################################################
 
 import libtcodpy as libtcod
@@ -11,8 +11,10 @@ import globs     #Global variables & constants
 import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
+#Debug - summon vendor, add money
+
 #Constants
-VERSION = "beta 1.0.1"   #major.minor.patch
+VERSION = "final 1.0"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -27,8 +29,8 @@ LIGHTNING_RANGE = 5
 CONFUSE_RANGE = 8
 FIREBALL_RADIUS = 3
 FIREBALL_DAMAGE = 25
-LEVEL_UP_BASE = 150
-LEVEL_UP_FACTOR = 150
+LEVEL_UP_BASE = 50
+LEVEL_UP_FACTOR = 100
 
 #FOV 
 FOV_ALGO = 0    #FOV algorithm to use
@@ -319,10 +321,17 @@ def placeObjects(room):
 
 	#Monster chances
 	monsterChances = {}
-	monsterChances["cockroach"] = 70  #Always spawns
-	monsterChances["robot"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	#Organics
+	monsterChances["cockroach"] = 50  #Always spawns
 	monsterChances["coyote"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
-	monsterChances["hobo"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["operator"] = fromDungeonLevel([[10, 3], [15, 5], [20, 7]])
+	monsterChances["rat"] = fromDungeonLevel([[20, 4], [25, 5], [30, 6]])
+	monsterChances["supervisor"] = fromDungeonLevel([[5, 7], [10, 10], [15, 12]])
+	monsterChances["spider"] = 10
+	#Mechs
+	monsterChances["robot"] = fromDungeonLevel([[5, 3], [5, 5], [10, 7]])
+	monsterChances["gear"] = fromDungeonLevel([[5, 3], [10, 5], [20, 7]])
+
 
 	#Shopkeeper NPC
 	monsterChances["shopkeep"] = 50
@@ -352,12 +361,32 @@ def placeObjects(room):
 			elif choice == "coyote":
 				fighterComponent = classes.Fighter(hp = 30, defense = 4, power = 4, xp = 35, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
-			
 				monster = classes.Object(x, y, 'd', 'coyote', libtcod.light_orange, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank
-			elif choice == "hobo":
-				fighterComponent = classes.Fighter(hp = 10, defense = 1, power = 4, xp = 25, deathFunction = monsterDeath)
+
+			elif choice == "operator":
+				fighterComponent = classes.Fighter(hp = 50, defense = 6, power = 5, xp = 70, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
-				monster = classes.Object(x, y, 'h', 'homeless man', libtcod.desaturated_green, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Glass cannon
+				monster = classes.Object(x, y, '@', "machine operator", libtcod.dark_red, blocks = True, fighter = fighterComponent, ai = aiComponent)
+
+			elif choice == "rat":
+				fighterComponent = classes.Fighter(hp = 40, defense = 4, power = 7, xp = 40, deathFunction = monsterDeath)
+				aiComponent = classes.BasicMonster()
+				monster = classes.Object(x, y, 'r', "rat", libtcod.darker_pink, blocks = True, fighter = fighterComponent, ai = aiComponent)
+
+			elif choice == "supervisor":
+				fighterComponent = classes.Fighter(hp = 100, defense = 7, power = 8, xp = 100, deathFunction = monsterDeath)
+				aiComponent = classes.BasicMonster()
+				monster = classes.Object(x, y, '@', "floor supervisor", libtcod.darker_green, blocks = True, fighter = fighterComponent, ai = aiComponent)
+
+			elif choice == "spider":
+				fighterComponent = classes.Fighter(hp = 15, defense  = 1, power = 3, xp = 15, deathFunction = monsterDeath)
+				aiComponent = classes.BasicMonster()
+				monster = classes.Object(x, y, 's', "spider", libtcod.dark_grey, blocks = True, fighter = fighterComponent, ai = aiComponent)
+
+			elif choice == "gear":
+				fighterComponent = classes.Fighter(hp = 35, defense = 5, power = 2, xp = 30, deathFunction = monsterDeath)
+				aiComponent = classes.BasicMonster()
+				monster = classes.Object(x, y, 'g', "flying gear", libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)
 
 			elif choice == "shopkeep":
 				#Make sure there isn't already a shopkeeper
