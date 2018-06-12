@@ -1,4 +1,4 @@
-verSlice release
+Final 1.0 Release
 ----------------------------------------
 HOW TO PLAY
 ----------------------------------------
@@ -15,6 +15,7 @@ HOW TO PLAY
 5) i: Inventory
 6) x: Descend stairs
 7) c: View character details
+8) t: Talk to NPC
 
 ----------------------------------------
 TROUBLESHOOTING
