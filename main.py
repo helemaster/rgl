@@ -11,6 +11,8 @@ import globs     #Global variables & constants
 import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
+import neuralNetwork
+
 #Debug - summon vendor, add money
 
 #Constants
