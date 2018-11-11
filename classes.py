@@ -296,7 +296,7 @@ class Item:
 	#Add to player's inventory and remove from map
 	def pickUp(self):
 		if len(globs.inventory) >= INVENTORY_SIZE:
-			globfun.message("Your can't fit anything else into your bag.", libtcod.red)
+			globfun.message("You can't fit anything else into your bag.", libtcod.red)
 		else:
 			globs.inventory.append(self.owner)
 			try:
