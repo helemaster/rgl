@@ -248,6 +248,12 @@ class Fighter:
 		self.hp += amount
 		if self.hp > self.maxHP:
 			self.hp = self.maxHP
+	
+	def getBonuses(self):
+		powBonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
+		defBonus = sum(equipment.defenseBonus for equipment in globfun.getAllEquipped(self.owner))
+		
+		return [powBonus, defBonus]
 
 #Monster behavior components
 ###########################################################
