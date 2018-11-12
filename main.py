@@ -134,12 +134,15 @@ def handleKeys():
 
 			#View character stats
 			if keyChar == "c":
+				powBonus = (globs.player.fighter.getBonuses())[0]
+				defBonus = (globs.player.fighter.getBonuses())[1]
+				
 				levelUpXP = LEVEL_UP_BASE + globs.player.level * LEVEL_UP_FACTOR
 				msgbox("Character Information\n\nLevel: " + str(globs.player.level) + 
 					"\nExperience: " + str(globs.player.fighter.xp) + "/" + str(levelUpXP) +
 					"\nMaximum HP: " + str(globs.player.fighter.maxHP) +
-					"\nAttack: " + str(globs.player.fighter.power) +
-					"\nDefense: " + str(globs.player.fighter.defense), CHARACTER_SCREEN_WIDTH)
+					"\nAttack: " + str(globs.player.fighter.power + powBonus) +
+					"\nDefense: " + str(globs.player.fighter.defense + defBonus), CHARACTER_SCREEN_WIDTH)
 
 			return 'no-turn'
 
@@ -840,9 +843,9 @@ def pickSymbol():
 	elif num == 1:
 		wallSym = 'o'
 	elif num == 2:
-		wallSym = '*'
+		wallSym = 'X'
 	elif num == 3:
-		wallSym = '^'
+		wallSym = 'E'
 
 	return wallSym
 
