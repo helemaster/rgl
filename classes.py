@@ -249,6 +249,12 @@ class Fighter:
 		if self.hp > self.maxHP:
 			self.hp = self.maxHP
 
+	def getBonuses(self):
+		powBonus = sum(equipment.powerBonus for equipment in globfun.getAllEquipped(self.owner))
+		defBonus = sum(equipment.defenseBonus for equipment in globfun.getAllEquipped(self.owner))
+
+		return [powBonus, defBonus]
+
 #Monster behavior components
 ###########################################################
 #BasicMonster - basic monster AI
@@ -296,7 +302,7 @@ class Item:
 	#Add to player's inventory and remove from map
 	def pickUp(self):
 		if len(globs.inventory) >= INVENTORY_SIZE:
-			globfun.message("Your can't fit anything else into your bag.", libtcod.red)
+			globfun.message("You can't fit anything else into your bag.", libtcod.red)
 		else:
 			globs.inventory.append(self.owner)
 			try:
