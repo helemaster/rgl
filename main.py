@@ -14,7 +14,7 @@ import shelve    #Saving & loading with dictionaries
 #Debug - summon vendor, add money
 
 #Constants
-VERSION = "final 1.0"   #major.minor.patch
+VERSION = "final 1.0.2"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
