@@ -16,7 +16,7 @@ import neuralNetwork
 #Debug - summon vendor, add money
 
 #Constants
-VERSION = "final 1.0"   #major.minor.patch
+VERSION = "final 1.0.3nn"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -56,7 +56,7 @@ COLOR_DARKEST = [libtcod.darkest_red, libtcod.darkest_flame, libtcod.darkest_ora
 			libtcod.darkest_magenta, libtcod.darkest_pink, libtcod.darkest_crimson]
 #Variables
 fovRecompute = True
-
+turnCount = 0
 ###########################################################
 #Functions
 ###########################################################
@@ -198,7 +198,7 @@ def targetMonster(maxRange = None):
 				return object
 
 def playerMoveOrAttack(dx, dy):
-	global fovRecompute
+	global fovRecompute, turnCount
 
 	#Coords player is moving to/attacking
 	x = globs.player.x + dx
@@ -217,6 +217,10 @@ def playerMoveOrAttack(dx, dy):
 	else:
 		globs.player.move(dx, dy)
 		fovRecompute = True
+
+	#Export turn data to NN file
+	exportData()
+	turnCount += 1
 
 ###########################################################
 #Map functions
@@ -1187,7 +1191,26 @@ def dbgFunctions(choice):
 		globs.player.x = shopkeeper.x
 		globs.player.y = shopkeeper.y
 
+###########################################################
+#NN Functions
+###########################################################
+#Export training data to file
+def exportData():
+	global stairs, turnCount
 
+	#Create exportation variables
+	stairPos = (stairs.x, stairs.y)
+	playerPos = (globs.player.x, globs.player.y)
+	playerHealth = globs.player.fighter.hp
+
+	fileName = "nnVars" + str(dungeonLevel) + ".txt"
+
+	#Open file in append mode and add turn data
+	with open(fileName, "a") as nnVarFile:
+		writeLine = str(turnCount) + "," + str(stairPos) + "," + str(playerPos) + "," + str(playerHealth) + "\n"
+		nnVarFile.write(writeLine)
+
+	#Open file and export data
 ###########################################################
 #Game state & initialization functions
 ###########################################################

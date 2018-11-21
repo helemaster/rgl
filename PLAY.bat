@@ -1,3 +1,1 @@
-@ECHO OFF
-
-D:\Python27\python.exe %cd%\main.py
+C:\Python27\python.exe %cd%\main.py
