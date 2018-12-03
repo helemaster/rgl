@@ -4,6 +4,8 @@
 ###########################################################
 
 #Import libraries
+import numpy
+from ast import literal_eval
 from neuralNetwork import NeuralNet
 
 #Global variables
@@ -11,7 +13,7 @@ dataContainer = {}
 classifier = ""
 
 #Neural network parameters
-INPUT_NODES = 0
+INPUT_NODES = 4
 HIDDEN_NODES = 30
 OUTPUT_NODES = 2
 LEARNING_RATE = 0.3
@@ -101,7 +103,7 @@ def train():
 				print("strr: " + str(strr))
 				if data[count].endswith(")"):  #Convert tuple
 					strr.translate(None, '()')  #Remove parentheses
-					strr = tuple(strr)
+					strr = literal_eval(strr)   #Convert from string to tuple
 					data[count] = strr
 				else:
 					strr = int(strr)
@@ -111,8 +113,18 @@ def train():
 
 			target = data[1]  #Get stairs pos tuple
 
-			#Remove target from data
-			inputs = data.pop(1)
+			#Remove target from data & convert to numpy array
+			data.pop(1)
+
+			count = 0
+			while count < len(data):
+				if not isinstance(data[count], tuple):
+					print(data[count])
+					data[count] = (data[count], None)
+					print(data[count])
+				count += 1
+
+			inputs = numpy.asfarray(data, dtype=object)
 
 			print("Data split successfully")
 
