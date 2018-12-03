@@ -1207,7 +1207,7 @@ def exportData():
 
 	#Open file in append mode and add turn data
 	with open(fileName, "a") as nnVarFile:
-		writeLine = str(turnCount) + "," + str(stairPos) + "," + str(playerPos) + "," + str(playerHealth) + "\n"
+		writeLine = str(turnCount) + "&" + str(stairPos) + "&" + str(playerPos) + "&" + str(playerHealth) + "\n"
 		nnVarFile.write(writeLine)
 
 	#Open file and export data

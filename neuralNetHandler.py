@@ -3,6 +3,9 @@
 #Interface for NeuralNetwork class
 ###########################################################
 
+#Import libraries
+from neuralNetwork import NeuralNet
+
 #Global variables
 dataContainer = {}
 classifier = ""
@@ -77,13 +80,47 @@ def visualizeData():
 def train():
 	global dataContainer, classifier
 	
+	print("--- BEGIN TRAINING ROUTINE ---")
+
 	for key in dataContainer:
+		print("Current file: %d" % key)
 		records = dataContainer[key]
-		records = records.split['::']
+		records = records.split('::')
+
+		print("Records split successfully")
 		
 		#Iterate through records and send to classifier
 		for row in records:
+			data = row.split("&")
 
+			#Convert items from strings
+			print("Starting data conversions...")
+			count = 0
+			while count < len(data):
+				strr = data[count]
+				print("strr: " + str(strr))
+				if data[count].endswith(")"):  #Convert tuple
+					strr.translate(None, '()')  #Remove parentheses
+					strr = tuple(strr)
+					data[count] = strr
+				else:
+					strr = int(strr)
+					data[count] = strr 
+				count += 1
+			print("Data conversion successful")
+
+			target = data[1]  #Get stairs pos tuple
+
+			#Remove target from data
+			inputs = data.pop(1)
+
+			print("Data split successfully")
+
+			#Send data to classifier
+			classifier.train(inputs, target)
+
+			print("Classifier trained successfully")
+	print("--- END TRAINING ROUTINE ---")
 	 
 def predict():
 	pass
@@ -107,6 +144,7 @@ def main():
 			choice = int(input("Enter selection: "))
 		except:
 			print("Invalid input!")
+			choice = 999
 
 		#Check choice
 		if(choice == 1):
