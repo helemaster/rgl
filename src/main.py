@@ -1,20 +1,20 @@
 ###########################################################
 #main.py
 #Base module to run game
-#Holly LeMaster, 2017
+#Holly LeMaster, 2017-2019
 #Version: Final
 ###########################################################
 
 import libtcodpy as libtcod
-import classes   #Classes
-import globs     #Global variables & constants
-import globfun   #GLobal functions
+from utils import classes   #Classes
+from utils import globs     #Global variables & constants
+from utils import globfun   #GLobal functions
 import shelve    #Saving & loading with dictionaries
 
 #Debug - summon vendor, add money
 
 #Constants
-VERSION = "final 1.0.2"   #major.minor.patch
+VERSION = "final 2.0.0"   #major.minor.patch
 LIMIT_FPS = 20
 
 #Menu widths
@@ -32,25 +32,25 @@ FIREBALL_DAMAGE = 25
 LEVEL_UP_BASE = 50
 LEVEL_UP_FACTOR = 100
 
-#FOV 
+#FOV
 FOV_ALGO = 0    #FOV algorithm to use
 FOV_LIGHT_WALLS = True
 TORCH_RADIUS = 10
 
 #Colors
-COLOR_DARK = [libtcod.dark_red, libtcod.dark_flame, libtcod.dark_orange, 
-			libtcod.dark_amber, libtcod.dark_yellow, libtcod.dark_lime, 
-			libtcod.dark_chartreuse, libtcod.dark_green, libtcod.dark_sea, 
+COLOR_DARK = [libtcod.dark_red, libtcod.dark_flame, libtcod.dark_orange,
+			libtcod.dark_amber, libtcod.dark_yellow, libtcod.dark_lime,
+			libtcod.dark_chartreuse, libtcod.dark_green, libtcod.dark_sea,
 			libtcod.dark_turquoise, libtcod.dark_cyan, libtcod.dark_sky,
-			libtcod.dark_azure, libtcod.dark_blue, libtcod.dark_han, 
-			libtcod.dark_violet, libtcod.dark_purple, libtcod.dark_fuchsia, 
+			libtcod.dark_azure, libtcod.dark_blue, libtcod.dark_han,
+			libtcod.dark_violet, libtcod.dark_purple, libtcod.dark_fuchsia,
 			libtcod.dark_magenta, libtcod.dark_pink, libtcod.dark_crimson]
-COLOR_DARKEST = [libtcod.darkest_red, libtcod.darkest_flame, libtcod.darkest_orange, 
-			libtcod.darkest_amber, libtcod.darkest_yellow, libtcod.darkest_lime, 
-			libtcod.darkest_chartreuse, libtcod.darkest_green, libtcod.darkest_sea, 
+COLOR_DARKEST = [libtcod.darkest_red, libtcod.darkest_flame, libtcod.darkest_orange,
+			libtcod.darkest_amber, libtcod.darkest_yellow, libtcod.darkest_lime,
+			libtcod.darkest_chartreuse, libtcod.darkest_green, libtcod.darkest_sea,
 			libtcod.darkest_turquoise, libtcod.darkest_cyan, libtcod.darkest_sky,
-			libtcod.darkest_azure, libtcod.darkest_blue, libtcod.darkest_han, 
-			libtcod.darkest_violet, libtcod.darkest_purple, libtcod.darkest_fuchsia, 
+			libtcod.darkest_azure, libtcod.darkest_blue, libtcod.darkest_han,
+			libtcod.darkest_violet, libtcod.darkest_purple, libtcod.darkest_fuchsia,
 			libtcod.darkest_magenta, libtcod.darkest_pink, libtcod.darkest_crimson]
 #Variables
 fovRecompute = True
@@ -69,7 +69,7 @@ def handleKeys():
 	#Fullscreen toggle
 	if key.vk == libtcod.KEY_ENTER and key.lalt:
 		libtcod.console_set_fullscreen(not libtcod.console_is_fullscreen())
-	
+
 	#Exit game
 	elif key.vk == libtcod.KEY_ESCAPE:
 		return 'exit'
@@ -96,15 +96,15 @@ def handleKeys():
 			playerMoveOrAttack(1, 1)
 		elif key.vk == libtcod.KEY_KP5:
 			pass
-		
+
 		else:
 			#Check for other keys
 			keyChar = chr(key.c)
-			
+
 			#Pick up item
-			if keyChar == 'g':  
+			if keyChar == 'g':
 				#Look for item in player's tile
-				for object in globs.objects: 
+				for object in globs.objects:
 					if object.x == globs.player.x and object.y == globs.player.y and object.item:
 						object.item.pickUp()
 						break
@@ -127,8 +127,8 @@ def handleKeys():
 					nextLevel()
 
 			#Talk to an NPC
-			if keyChar == "t":  
-				if(shopkeeper.x - 1 == globs.player.x or shopkeeper.x + 1 == globs.player.x or 
+			if keyChar == "t":
+				if(shopkeeper.x - 1 == globs.player.x or shopkeeper.x + 1 == globs.player.x or
 					shopkeeper.y - 1 == globs.player.y or shopkeeper.y + 1 == globs.player.y):
 					shop(shopkeeper)
 
@@ -136,9 +136,9 @@ def handleKeys():
 			if keyChar == "c":
 				powBonus = (globs.player.fighter.getBonuses())[0]
 				defBonus = (globs.player.fighter.getBonuses())[1]
-				
+
 				levelUpXP = LEVEL_UP_BASE + globs.player.level * LEVEL_UP_FACTOR
-				msgbox("Character Information\n\nLevel: " + str(globs.player.level) + 
+				msgbox("Character Information\n\nLevel: " + str(globs.player.level) +
 					"\nExperience: " + str(globs.player.fighter.xp) + "/" + str(levelUpXP) +
 					"\nMaximum HP: " + str(globs.player.fighter.maxHP) +
 					"\nAttack: " + str(globs.player.fighter.power + powBonus) +
@@ -273,7 +273,7 @@ def makeMap():
 					createHTunnel(prevX, newX, newY)
 
 			#Populate objects into room
-			placeObjects(newRoom)		
+			placeObjects(newRoom)
 
 			#Append new room to list
 			rooms.append(newRoom)
@@ -306,7 +306,7 @@ def createVTunnel(y1, y2, x):
 
 #Returns value that depends on dungeon level - table specifies what value occurs after each level (for generating max items per room)
 def fromDungeonLevel(table):
-	for (value, level) in reversed(table): 
+	for (value, level) in reversed(table):
 		if dungeonLevel >= level:
 			return value
 	return 0
@@ -355,12 +355,12 @@ def placeObjects(room):
 				fighterComponent = classes.Fighter(hp = 30, defense = 3, power = 2, xp = 25, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'r', 'possessed machinery', libtcod.light_grey, blocks = True, fighter = fighterComponent, ai = aiComponent)  #Tank with little dmg
-			
+
 			elif choice == "cockroach":
 				fighterComponent = classes.Fighter(hp = 10, defense = 1, power = 2, xp = 10, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
 				monster = classes.Object(x, y, 'c', 'cockroach', libtcod.sepia, blocks = True, fighter = fighterComponent, ai = aiComponent)   #Weak
-			
+
 			elif choice == "coyote":
 				fighterComponent = classes.Fighter(hp = 30, defense = 4, power = 4, xp = 35, deathFunction = monsterDeath)
 				aiComponent = classes.BasicMonster()
@@ -424,10 +424,10 @@ def placeObjects(room):
 	itemChances["lightbulb"] = fromDungeonLevel([[25, 4]])
 	itemChances["match"] = fromDungeonLevel([[25, 6]])
 	itemChances["mace"] = fromDungeonLevel([[10, 2]])
-	
+
 	#Equipment
 	#Melee weapon
-	itemChances["bat"] = 25 
+	itemChances["bat"] = 25
 	itemChances["pan"] = fromDungeonLevel([[10, 5]])
 
 	itemChances["hammer"] = fromDungeonLevel([[5, 6]])
@@ -464,27 +464,27 @@ def placeObjects(room):
 
 #Create items in response to a choice
 def getItems(choice, x, y):
-	
+
 	if choice == "heal":
 		#Create healing potion
 		itemComponent = classes.Item("A sterile bandage. Heal 40 hit points.", useFunction = castHeal, price = 10)
 		item = classes.Object(x, y, '~', "bandage", libtcod.lightest_red, item = itemComponent)
-	
+
 	elif choice == "lightbulb":
 		#Create lightning bolt scroll
 		itemComponent = classes.Item("It crackles with a strange energy. For use in combat.", useFunction = castLightning, price = 30)
 		item = classes.Object(x, y, '?', "strange lightbulb", libtcod.light_sky, item = itemComponent)
-	
+
 	elif choice == "match":
 		#Create fireball scroll
 		itemComponent = classes.Item("It feels hot to the touch. For use in combat.", useFunction = castFireball, price = 30)
 		item = classes.Object(x, y, '!', "strange match", libtcod.light_orange, item = itemComponent)
-	
+
 	elif choice == "mace":
 		#Create confuse scroll
 		itemComponent = classes.Item("You don't want to spray this in your eyes. For use in combat.", useFunction = castConfusion, price = 30)
 		item = classes.Object(x, y, '!', "can of mace", libtcod.dark_green, item = itemComponent)
-	
+
 	#Equipment spawning
 	elif choice == "bat":
 		#Create baseball bat
@@ -603,10 +603,10 @@ def generateStock():
 	itemChances["lightbulb"] = fromDungeonLevel([[25, 4]])
 	itemChances["match"] = fromDungeonLevel([[25, 6]])
 	itemChances["mace"] = fromDungeonLevel([[10, 2]])
-	
+
 	#Equipment
 	#Melee weapon
-	itemChances["bat"] = 25 
+	itemChances["bat"] = 25
 	itemChances["pan"] = fromDungeonLevel([[10, 5]])
 
 	itemChances["hammer"] = fromDungeonLevel([[5, 6]])
@@ -693,7 +693,7 @@ def playerDeath(player):
 #Kill monster, change character, modify attributes
 def monsterDeath(monster):
 	globfun.message(monster.name.capitalize() + " is dead! You gain " + str(monster.fighter.xp) + " experience points.", libtcod.orange)
-	
+
 	#Give player money
 	amount = libtcod.random_get_int(0, 1, 10)
 	globs.money += amount
@@ -894,7 +894,7 @@ def renderAll():
 	globs.player.draw()
 
 	#Push contents of con to root console
-	libtcod.console_blit(classes.con, 0, 0, globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 0, 0, 0)  
+	libtcod.console_blit(classes.con, 0, 0, globs.SCREEN_WIDTH, globs.SCREEN_HEIGHT, 0, 0, 0)
 
 
 	#Draw GUI elements
@@ -1082,7 +1082,7 @@ def inventoryUseMenu(chosenItem):
 def shopUseMenu():
 	#Ask what player wants to do
 	options = ["Buy", "Sell"]
-	
+
 	index = menu("What do you want to do?", options, INVENTORY_WIDTH)
 
 	if index == 0:   #Buy
@@ -1110,7 +1110,7 @@ def shopMenu(shopkeeper):
 
 #Debug menu - menu with debug options and cheats
 def debugMenu(header):
-	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage", 
+	options = ["Godmode", "Ghostmode", "Heal", "Boost attack", "Take damage",
 		"Kill self", "Show stairs", "Teleport to stairs", "Get item", "Teleport to shopkeeper"]
 
 	index = menu(header, options, INVENTORY_WIDTH)
@@ -1120,14 +1120,14 @@ def debugMenu(header):
 	return options[index]
 
 #Debugging functions
-def dbgFunctions(choice): 
+def dbgFunctions(choice):
 	global shopkeeper
 
 	if choice == "Godmode":
 		globs.player.fighter.hp = -9999
 		globs.player.fighter.power = 9999
-	
-	elif choice == "Ghostmode": 
+
+	elif choice == "Ghostmode":
 		#Unblock all objects
 		for object in globs.objects:
 			object.blocks = False
@@ -1161,8 +1161,8 @@ def dbgFunctions(choice):
 	elif choice == "Get item":
 		#Print menu and have player select item to get
 
-		items = ["heal", "lightbulb", "match", "mace", "bat", "pan", "hammer", 
-		"yoyo", "potLid", "cutBoard", "trashLid", "t-shirt", "polo", "hoodie", 
+		items = ["heal", "lightbulb", "match", "mace", "bat", "pan", "hammer",
+		"yoyo", "potLid", "cutBoard", "trashLid", "t-shirt", "polo", "hoodie",
 		"paperHat", "cap", "backCap", "sandals", "boots"]
 
 		print("===Get Item Debug===")
@@ -1259,7 +1259,7 @@ def loadGame():
 	globs.gameMsgs = file["gameMsgs"]
 	globs.gameState = file["gameState"]
 	stairs = globs.objects[file["stairsIndex"]]
-	dungeonLevel = file["dungeonLevel"] 
+	dungeonLevel = file["dungeonLevel"]
 	globs.money = file["money"]
 	file.close()
 
@@ -1316,7 +1316,7 @@ def playGame():
 
 		#Render objects & map
 		renderAll()
-	
+
 		libtcod.console_flush() #Present changes to console
 
 		#Make sure player hasn't leveled up
@@ -1332,7 +1332,7 @@ def playGame():
 		if globs.playerAction == 'exit':
 			saveGame()  #Auto-save when quitting
 			break
-	
+
 
 		#Let AIs take turn
 		if globs.gameState == 'playing' and globs.playerAction != 'no-turn':
